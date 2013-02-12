@@ -1,0 +1,45 @@
+# temp files
+*.swp
+*.swo
+
+# java files
+*.jar
+*.war
+*.ear
+*.class
+
+# common
+common/test-classes
+common/bin
+common/build
+common/war/WEB-INF/classes
+common/*.ggb
+common/*.ggt
+common/*.class
+common/*.jnilib
+common/*.so
+
+# desktop
+desktop/bin
+desktop/.classpath
+
+# iwb
+iwb/bin
+iwb/lib
+
+# jogl
+jogl1/lib
+jogl1/bin
+jogl2/lib
+jogl2/bin
+
+# mobile
+mobile/lib
+mobile/war/WEB-INF/classes
+
+# web
+web/lib
+web/war/WEB-INF/classes
+
+# misc
+*.img
