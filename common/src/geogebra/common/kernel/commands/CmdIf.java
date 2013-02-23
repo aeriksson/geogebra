@@ -1,17 +1,19 @@
 package geogebra.common.kernel.commands;
 
 import geogebra.common.kernel.Kernel;
+import geogebra.common.kernel.algos.AlgoDependentFunction;
 import geogebra.common.kernel.algos.AlgoIf;
-import geogebra.common.kernel.algos.AlgoIfFunction;
 import geogebra.common.kernel.arithmetic.Command;
+import geogebra.common.kernel.arithmetic.ExpressionNode;
 import geogebra.common.kernel.arithmetic.Function;
 import geogebra.common.kernel.arithmetic.FunctionVariable;
+import geogebra.common.kernel.arithmetic.MyNumberPair;
 import geogebra.common.kernel.geos.GeoBoolean;
 import geogebra.common.kernel.geos.GeoElement;
 import geogebra.common.kernel.geos.GeoFunction;
-import geogebra.common.kernel.geos.GeoFunctionConditional;
 import geogebra.common.kernel.geos.GeoFunctionable;
 import geogebra.common.main.MyError;
+import geogebra.common.plugin.Operation;
 
 /**
  * If[ <GeoBoolean>, <GeoElement> ] If[ <GeoBoolean>, <GeoElement>, <GeoElement>
@@ -103,8 +105,6 @@ public class CmdIf extends CommandProcessor {
 
 	private GeoFunction resolveFunction(Command c, int i, FunctionVariable fv) {
 		c.getArgument(i).resolveVariables(false);
-		if(  c.getArgument(i).getLeft() instanceof GeoFunctionConditional)
-				return (GeoFunction)c.getArgument(i).getLeft();
 		return (GeoFunction)kernelA.getAlgebraProcessor().processFunction(new Function(c.getArgument(i),fv))[0];
 	}
 	
@@ -114,9 +114,19 @@ public class CmdIf extends CommandProcessor {
 	 */
 	final private GeoFunction If(String label, GeoFunction boolFun,
 			GeoFunction ifFun, GeoFunction elseFun) {
+		FunctionVariable fv = ifFun.getFunctionVariables()[0];
+		ExpressionNode expr;
+		if(elseFun==null){
+			expr = new ExpressionNode(kernelA,wrap(boolFun,fv),Operation.IF,wrap(ifFun,fv));
+		}else{
+			expr = new ExpressionNode(kernelA,new MyNumberPair(kernelA,wrap(boolFun,fv),wrap(ifFun,fv)),Operation.IF_ELSE,wrap(elseFun,fv));
+		}
+		Function fun = new Function(expr,fv);
+		AlgoDependentFunction algo = new AlgoDependentFunction(cons,label,fun);
+		return algo.getFunction();
+	}
 
-		AlgoIfFunction algo = new AlgoIfFunction(cons, label, boolFun, ifFun,
-				elseFun);
-		return algo.getGeoFunction();
+	private ExpressionNode wrap(GeoFunction boolFun, FunctionVariable fv) {
+		return new ExpressionNode(kernelA,boolFun,Operation.FUNCTION,fv);
 	}
 }

@@ -2,13 +2,11 @@ package geogebra.mobile;
 
 import geogebra.common.awt.GBufferedImage;
 import geogebra.common.awt.GFont;
-import geogebra.common.euclidian.DrawEquationInterface;
 import geogebra.common.euclidian.EuclidianController;
 import geogebra.common.euclidian.EuclidianView;
 import geogebra.common.euclidian.EuclidianViewInterfaceCommon;
 import geogebra.common.factories.CASFactory;
 import geogebra.common.factories.Factory;
-import geogebra.common.factories.SwingFactory;
 import geogebra.common.gui.GuiManager;
 import geogebra.common.gui.menubar.MenuInterface;
 import geogebra.common.gui.view.algebra.AlgebraView;
@@ -16,28 +14,28 @@ import geogebra.common.kernel.AnimationManager;
 import geogebra.common.kernel.Construction;
 import geogebra.common.kernel.Kernel;
 import geogebra.common.kernel.UndoManager;
-import geogebra.common.kernel.arithmetic.ExpressionNodeConstants.StringType;
 import geogebra.common.kernel.geos.GeoElement;
 import geogebra.common.kernel.geos.GeoElementGraphicsAdapter;
 import geogebra.common.main.App;
 import geogebra.common.main.DialogManager;
 import geogebra.common.main.FontManager;
-import geogebra.common.main.GlobalKeyDispatcher;
+import geogebra.common.main.Localization;
 import geogebra.common.main.MyError;
 import geogebra.common.main.SpreadsheetTableModel;
 import geogebra.common.main.settings.Settings;
 import geogebra.common.plugin.ScriptManager;
 import geogebra.common.plugin.jython.PythonBridge;
-import geogebra.common.sound.SoundManager;
 import geogebra.common.util.AbstractImageManager;
-import geogebra.common.util.NormalizerMinimal;
 import geogebra.mobile.gui.GeoGebraMobileGUI;
 import geogebra.mobile.gui.elements.header.XMLBuilder;
+import geogebra.mobile.gui.euclidian.EuclidianViewM;
 import geogebra.web.io.MyXMLio;
 import geogebra.web.kernel.UndoManagerW;
-import geogebra.web.main.AppW;
+import geogebra.web.main.AppWeb;
 import geogebra.web.main.FontManagerW;
+import geogebra.web.main.LocalizationW;
 
+import com.google.gwt.canvas.client.Canvas;
 import com.google.gwt.i18n.client.LocaleInfo;
 
 /**
@@ -46,7 +44,7 @@ import com.google.gwt.i18n.client.LocaleInfo;
  * @author Matthias Meisinger
  * 
  */
-public class MobileApp extends App
+public class MobileApp extends AppWeb
 {
 	private GeoGebraMobileGUI mobileGUI;
 	private FontManagerW fontManager;
@@ -55,9 +53,11 @@ public class MobileApp extends App
 	 */
 	public static String currentFileId = null;
 	private XMLBuilder mobileXML;
-	private SoundManager soundManager;
+	private LocalizationW loc;
 
-
+	// accepting range for hitting Geos (except for Points) is multiplied with this factor 
+	// (for Points see EuclidianView)
+	private int selectionFactor = 3; 
 
 	/**
 	 * Initializes the factories, {@link FontManagerW} and {@link Settings}.
@@ -73,13 +73,17 @@ public class MobileApp extends App
 
 		setLabelDragsEnabled(false); 
 		
-		intitFactories();
+		initFactories();
+		
+		this.loc = new LocalizationW();
 
 		this.fontManager = new FontManagerW();
 		this.mobileGUI = mobileGUI;
 		this.settings = new Settings();
 
 		setFontSize(12);
+		
+		this.capturingThreshold *= this.selectionFactor; 
 	}
 
 	// not needed yet, because we use xml-Strings
@@ -95,11 +99,13 @@ public class MobileApp extends App
 	{
 
 		this.kernel = new Kernel(MobileApp.this);
-
-		setUndoActive(true);
+		
 		this.mobileGUI.initComponents(this.kernel);
 		super.euclidianView = this.mobileGUI.getEuclidianViewPanel().getEuclidianView();
-
+		
+		hasFullPermissions = true; 
+		setUndoActive(true);
+		
 		super.initing = false;
 	}
 	
@@ -107,14 +113,7 @@ public class MobileApp extends App
 		return this.mobileGUI; 
 	}
 
-	private static void intitFactories()
-	{
-		geogebra.common.factories.FormatFactory.prototype = new geogebra.web.factories.FormatFactoryW();
-		geogebra.common.factories.AwtFactory.prototype = new geogebra.web.factories.AwtFactoryW();
-		geogebra.common.euclidian.EuclidianStatic.prototype = new geogebra.web.euclidian.EuclidianStaticW();
-
-		geogebra.common.util.StringUtil.prototype = new geogebra.common.util.StringUtil();
-	}
+	
 
 	@Override
 	protected FontManager getFontManager()
@@ -132,78 +131,6 @@ public class MobileApp extends App
 		return null;
 	}
 
-	@Override
-	protected boolean isCommandChanged()
-	{
-
-		return false;
-	}
-
-	@Override
-	protected void setCommandChanged(boolean b)
-	{
-
-	}
-
-	@Override
-	protected boolean isCommandNull()
-	{
-
-		return false;
-	}
-
-	@Override
-	public void initCommand()
-	{
-
-	}
-
-	@Override
-	public void initScriptingBundle()
-	{
-
-	}
-
-	@Override
-	public String getScriptingCommand(String internal)
-	{
-
-		return null;
-	}
-
-	@Override
-	public String getCommand(String key)
-	{
-
-		return null;
-	}
-
-	@Override
-	public String getPlain(String key)
-	{
-		// TODO
-		return key;
-	}
-
-	@Override
-	public String getMenu(String key)
-	{
-
-		return null;
-	}
-
-	@Override
-	public String getError(String key)
-	{
-
-		return null;
-	}
-
-	@Override
-	public void setTooltipFlag()
-	{
-
-	}
 
 	@Override
 	public boolean isApplet()
@@ -215,7 +142,9 @@ public class MobileApp extends App
 	@Override
 	public void storeUndoInfo()
 	{
-
+		if (isUndoActive()) {
+			this.kernel.storeUndoInfo();
+		}
 	}
 
 	@Override
@@ -230,20 +159,6 @@ public class MobileApp extends App
 	{
 
 		return false;
-	}
-
-	@Override
-	public String getLanguage()
-	{
-		// TODO
-		return getLocaleStr().substring(0, 2);
-	}
-
-	@Override
-	public String getInternalCommand(String s)
-	{
-
-		return null;
 	}
 
 	@Override
@@ -314,32 +229,12 @@ public class MobileApp extends App
 	}
 
 	@Override
-	public String reverseGetColor(String colorName)
-	{
-
-		return null;
-	}
-
-	@Override
-	public String getColor(String key)
-	{
-
-		return null;
-	}
-
-	@Override
 	public GBufferedImage getExternalImageAdapter(String filename)
 	{
 
 		return null;
 	}
 
-	@Override
-	protected String getSyntaxString()
-	{
-
-		return null;
-	}
 
 	@Override
 	public void showRelation(GeoElement geoElement, GeoElement geoElement2)
@@ -376,13 +271,6 @@ public class MobileApp extends App
 	public void resetUniqueId()
 	{
 
-	}
-
-	@Override
-	public DrawEquationInterface getDrawEquation()
-	{
-
-		return null;
 	}
 
 	@Override
@@ -470,14 +358,6 @@ public class MobileApp extends App
 	}
 
 	@Override
-	public SoundManager getSoundManager() {
-		if (this.soundManager == null) {
-//			this.soundManager = new SoundManagerW(this);
-		}
-		return this.soundManager;
-	}
-
-	@Override
 	public boolean showAlgebraInput()
 	{
 
@@ -506,13 +386,6 @@ public class MobileApp extends App
 	public void updateUI()
 	{
 
-	}
-
-	@Override
-	public String getTooltipLanguageString()
-	{
-
-		return null;
 	}
 
 	@Override
@@ -549,22 +422,15 @@ public class MobileApp extends App
 	}
 
 	@Override
-	public StringType getFormulaRenderingType()
-	{
-
-		return null;
-	}
-
-	@Override
 	public String getLocaleStr()
 	{
 		// TODO
 		String localeName = LocaleInfo.getCurrentLocale().getLocaleName();
 		App.debug("Current Locale: " + localeName);
 
-		if (localeName.toLowerCase().equals(AppW.DEFAULT_LOCALE))
+		if (localeName.toLowerCase().equals(LocalizationW.DEFAULT_LOCALE))
 		{
-			return AppW.DEFAULT_LANGUAGE;
+			return LocalizationW.DEFAULT_LANGUAGE;
 		}
 		return localeName.substring(0, 2);
 	}
@@ -629,12 +495,6 @@ public class MobileApp extends App
 	}
 
 	@Override
-	public NormalizerMinimal getNormalizer()
-	{
-		return null;
-	}
-
-	@Override
 	public void runScripts(GeoElement geo1, String string)
 	{
 	}
@@ -645,17 +505,7 @@ public class MobileApp extends App
 		return null;
 	}
 
-	@Override
-	public String getSymbol(int key)
-	{
-		return null;
-	}
 
-	@Override
-	public String getSymbolTooltip(int key)
-	{
-		return null;
-	}
 
 	@Override
 	public GuiManager getGuiManager()
@@ -674,12 +524,6 @@ public class MobileApp extends App
 			this.euclidianView = (EuclidianView) getActiveEuclidianView();
 		}
 		return this.euclidianView;
-	}
-
-	@Override
-	public GlobalKeyDispatcher getGlobalKeyDispatcher()
-	{
-		return null;
 	}
 
 	@Override
@@ -718,12 +562,6 @@ public class MobileApp extends App
 	}
 
 	@Override
-	public SwingFactory getSwingFactory()
-	{
-		return null;
-	}
-
-	@Override
 	public Factory getFactory()
 	{
 		return null;
@@ -750,7 +588,11 @@ public class MobileApp extends App
 	@Override
 	public ScriptManager getScriptManager()
 	{
-		return null;
+		//TODO
+		if (this.scriptManager == null) {
+			this.scriptManager = new ScriptManagerM(this);
+		}
+		return this.scriptManager;
 	}
 
 	@Override
@@ -765,6 +607,23 @@ public class MobileApp extends App
 	@Override
 	public geogebra.common.io.MyXMLio createXMLio(Construction cons) {
 		return new MyXMLio(cons.getKernel(), cons);
+	}
+
+	@Override
+  public void createNewWindow()
+  {
+	  // TODO Auto-generated method stub
+	  
+  }
+
+	@Override
+	public Localization getLocalization() {
+		return this.loc;
+	}
+
+	@Override
+	public Canvas getCanvas() {
+		return ((EuclidianViewM) getActiveEuclidianView()).getCanvas();
 	}
 
 }

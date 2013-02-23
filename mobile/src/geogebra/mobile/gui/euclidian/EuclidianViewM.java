@@ -2,21 +2,20 @@ package geogebra.mobile.gui.euclidian;
 
 import geogebra.common.awt.GColor;
 import geogebra.common.awt.GDimension;
-import geogebra.common.awt.GFont;
 import geogebra.common.awt.GGraphics2D;
 import geogebra.common.awt.GPoint;
 import geogebra.common.euclidian.EuclidianController;
 import geogebra.common.euclidian.EuclidianStyleBar;
-import geogebra.common.euclidian.EuclidianView;
-import geogebra.common.euclidian.MyZoomer;
+import geogebra.common.euclidian.Hits;
 import geogebra.common.euclidian.event.AbstractEvent;
-import geogebra.common.factories.AwtFactory;
 import geogebra.common.javax.swing.GBox;
 import geogebra.common.kernel.geos.GeoImage;
 import geogebra.common.main.settings.Settings;
 import geogebra.mobile.controller.MobileController;
 import geogebra.web.awt.GGraphics2DW;
-import geogebra.web.euclidian.MyZoomerW;
+import geogebra.web.awt.GRectangleW;
+import geogebra.web.euclidian.EuclidianViewWeb;
+import geogebra.web.main.DrawEquationWeb;
 
 import java.util.List;
 
@@ -37,22 +36,29 @@ import com.google.gwt.user.client.Window;
  * @author Thomas Krismayer
  * 
  */
-public class EuclidianViewM extends EuclidianView
+public class EuclidianViewM extends EuclidianViewWeb
 {
 	int oldDistance;
 
 	// set in setCanvas
-	GGraphics2DW g2p = null;
-	Canvas canvas;
+	private Canvas canvas;
 
-	private GColor backgroundColor = GColor.white;
-	private GGraphics2D g2dtemp;
+	
+	protected Hits hits; 
 
+	private static int SELECTION_DIAMETER_MIN = 25; // taken from geogebra.common.euclidian.draw.DrawPoint
+	
+	// accepting range for hitting a point is multiplied with this factor 
+	// (for anything other see App)
+	private int selectionFactor = 3; 
+	
 	public EuclidianViewM(MobileController ec)
 	{
 		super(ec, new Settings().getEuclidian(1));
 
 		this.setAllowShowMouseCoords(false);
+		
+		this.hits = new Hits(); 
 	}
 
 	/**
@@ -193,22 +199,43 @@ public class EuclidianViewM extends EuclidianView
 	@Override
 	public void repaint()
 	{
+		if (getEuclidianController().isCollectingRepaints()){
+    		getEuclidianController().setCollectedRepaints(true);
+    		return;
+    	}
+		System.out.println("repaint");
+
 		if (getAxesColor() == null)
 		{
 			setAxesColor(geogebra.common.awt.GColor.black);
 		}
-
+		((DrawEquationWeb)this.app.getDrawEquation()).clearLaTeXes(this);    	
 		updateSize();
 		paint(this.g2p);
 	}
 
+	/**
+	 * this version also adds points that are very close to the hit point
+	 */
 	@Override
-	public GColor getBackgroundCommon()
-	{
-		// TODO
-		return this.backgroundColor;
+	public void setHits(GPoint p){
+		super.setHits(p); 
+		this.hits = super.getHits(); 
+		
+		if(this.hits.size() == 0){			
+			GRectangleW rect = new GRectangleW(); 
+			int size = EuclidianViewM.SELECTION_DIAMETER_MIN * this.selectionFactor;  
+			rect.setBounds(p.x - (size/2), p.y - (size/2), size, size); 
+			this.setHits(rect); 
+			this.hits = super.getHits(); 
+		}
 	}
-
+	
+	@Override
+	public Hits getHits(){		
+		return this.hits;		
+	}
+	
 	@Override
 	public boolean hitAnimationButton(AbstractEvent event)
 	{
@@ -295,21 +322,7 @@ public class EuclidianViewM extends EuclidianView
 		updateBackgroundImage();
 	}
 
-	@Override
-	public GGraphics2D getTempGraphics2D(GFont fontForGraphics)
-	{
-		// TODO
-		if (this.g2dtemp == null)
-			this.g2dtemp = new geogebra.web.awt.GGraphics2DW(Canvas.createIfSupported());
-		this.g2dtemp.setFont(fontForGraphics);
-		return this.g2dtemp;
-	}
-
-	@Override
-	public GFont getFont()
-	{
-		return null;
-	}
+	
 
 	@Override
 	protected void setHeight(int h)
@@ -351,32 +364,6 @@ public class EuclidianViewM extends EuclidianView
 		return false;
 	}
 
-	@Override
-	public void paintBackground(GGraphics2D g2)
-	{
-		// TODO
-		((GGraphics2DW) g2).drawGraphics((GGraphics2DW) this.bgGraphics, 0, 0, null);
-	}
-
-	@Override
-	protected void drawActionObjects(GGraphics2D g)
-	{
-	}
-
-	@Override
-	protected void setAntialiasing(GGraphics2D g2)
-	{
-		// TODO
-	}
-
-	@Override
-	public void setBackground(GColor bgColor)
-	{
-		if (bgColor != null)
-		{
-			this.backgroundColor = AwtFactory.prototype.newColor(bgColor.getRed(), bgColor.getGreen(), bgColor.getBlue(), bgColor.getAlpha());
-		}
-	}
 
 	@Override
 	public void setPreferredSize(GDimension preferredSize)
@@ -386,12 +373,6 @@ public class EuclidianViewM extends EuclidianView
 	@Override
 	protected void doDrawPoints(GeoImage gi, List<GPoint> penPoints2, GColor penColor, int penLineStyle, int penSize)
 	{
-	}
-
-	@Override
-	protected MyZoomer newZoomer()
-	{
-		return new MyZoomerW(this);
 	}
 
 	@Override
@@ -432,5 +413,9 @@ public class EuclidianViewM extends EuclidianView
 	  // TODO Auto-generated method stub
 	  
   }
+	
+	public Canvas getCanvas(){
+		return this.canvas;
+	}
 
 }

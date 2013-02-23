@@ -27,6 +27,7 @@ import geogebra.common.main.App;
 import geogebra.common.plugin.GeoClass;
 import geogebra.common.plugin.script.GgbScript;
 import geogebra.common.util.StringUtil;
+import geogebra.common.util.Unicode;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -132,7 +133,7 @@ public class GeoCasCell extends GeoElement implements VarString {
 		if (tpl.isPrintLocalizedCommandNames()) {
 			// input with localized command names
 			if (currentLanguage == null
-					|| !currentLanguage.equals(kernel.getApplication()
+					|| !currentLanguage.equals(loc
 							.getLanguage())) {
 				updateLocalizedInput(tpl);
 			}
@@ -152,7 +153,7 @@ public class GeoCasCell extends GeoElement implements VarString {
 	public String getOutput(StringTemplate tpl) {
 		if (error != null) {
 			if (tpl.isPrintLocalizedCommandNames()) {
-				return kernel.getApplication().getError(error);
+				return loc.getError(error);
 			}
 			return error;
 		}
@@ -175,7 +176,7 @@ public class GeoCasCell extends GeoElement implements VarString {
 	public String getOutputRHS(StringTemplate tpl){
 		if (error != null) {
 			if (tpl.isPrintLocalizedCommandNames()) {
-				return kernel.getApplication().getError(error);
+				return loc.getError(error);
 			}
 			return error;
 		}
@@ -492,7 +493,7 @@ public class GeoCasCell extends GeoElement implements VarString {
 
 	private void updateLocalizedInput(final StringTemplate tpl) {
 		// for efficiency: localized input with local command names
-		currentLanguage = cons.getApplication().getLanguage();
+		currentLanguage = loc.getLanguage();
 		localizedInput = localizeInput(input, tpl);
 	}
 
@@ -636,7 +637,7 @@ public class GeoCasCell extends GeoElement implements VarString {
 			return (kernel.getGeoGebraCAS()).getCASparser()
 					.parseGeoGebraCASInputAndResolveDummyVars(inValue);
 		}catch (CASException c){
-			setError(app.getError(c.getKey()));
+			setError(loc.getError(c.getKey()));
 			return null;
 		}catch (Throwable e){
 			
@@ -1194,13 +1195,6 @@ public class GeoCasCell extends GeoElement implements VarString {
 	}
 
 	/**
-	 * @return evaluated command
-	 */
-	final public String getEvalCommand() {
-		return pointList ? "PointList" : evalCmd;
-	}
-
-	/**
 	 * @param cmd
 	 *            command
 	 */
@@ -1231,13 +1225,6 @@ public class GeoCasCell extends GeoElement implements VarString {
 		if (comment != null) {
 			evalComment = comment;
 		}
-	}
-
-	/**
-	 * @return comment
-	 */
-	final public String getEvalComment() {
-		return evalComment;
 	}
 
 	/**
@@ -2211,7 +2198,7 @@ public class GeoCasCell extends GeoElement implements VarString {
 	@Override
 	public String getTooltipText(final boolean colored, final boolean alwaysOn) {
 		if(isError())
-			return kernel.getApplication().getError(error);
+			return loc.getError(error);
 		if(tooltip == null && outputVE!=null){				
 				tooltip = getOutput(StringTemplate.defaultTemplate);
 				tooltip = tooltip.replace("gGbSuM(", "\u03a3(");
@@ -2249,22 +2236,33 @@ public class GeoCasCell extends GeoElement implements VarString {
 	 * @return information about eval command for display in the cell
 	 */
 	public String getCommandAndComment() {
-		String evalCmdLocal = app.getCommand(evalCmd);
+		StringBuilder evalCmdLocal = new StringBuilder();
+		if(pointList){
+			evalCmdLocal.append(loc.getCommand("PointList"));
+		}else if("".equals(evalCmd)){
+			return Unicode.CAS_OUTPUT_PREFIX;
+		}else if("Numeric".equals(evalCmd)){
+			return Unicode.CAS_OUTPUT_NUMERIC;
+		}else if("KeepInput".equals(evalCmd)){
+			return Unicode.CAS_OUTPUT_KEEPINPUT;
+		}else{
+			evalCmdLocal.append(loc.getCommand(evalCmd));
+		}
 
-		if (input.startsWith(evalCmdLocal)) {
+		if (input.startsWith(evalCmdLocal.toString())) {
 			// don't show command if it is already at beginning of input
-			evalCmdLocal = "";
+			return Unicode.CAS_OUTPUT_PREFIX;
 		}
 
 		// eval comment (e.g. "x=5, y=8")
 		if (evalComment.length() > 0) {
-			if (evalCmdLocal.length() == 0) {
-				evalCmdLocal = evalComment;
-			} else {
-				evalCmdLocal = evalCmdLocal + ", " + evalComment;
+			if (evalCmdLocal.length() != 0) {
+				evalCmdLocal.append(", ");
 			}
+			evalCmdLocal.append(evalComment);
 		}
-		return evalCmdLocal;
+		evalCmdLocal.append(":");
+		return evalCmdLocal.toString();
 	}
 
 }

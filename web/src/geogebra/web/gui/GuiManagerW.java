@@ -39,6 +39,8 @@ import geogebra.web.main.AppW;
 import geogebra.web.main.TimerSystemW;
 
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.TreeMap;
 
 import com.google.gwt.canvas.client.Canvas;
 import com.google.gwt.dom.client.Document;
@@ -61,13 +63,11 @@ public class GuiManagerW extends GuiManager {
 	private AlgebraControllerW algebraController;
 	private AlgebraViewW algebraView;
 	private SpreadsheetViewW spreadsheetView;
+	private Map<Integer,String> customToolbarDefinitions = new TreeMap<Integer,String>();
 
 	private TimerSystemW timers;
 	private final AppW app;
 	private AbsolutePanel main;
-
-	private int width;
-	private int height;
 
 	private LayoutW layout;
 
@@ -120,7 +120,7 @@ public class GuiManagerW extends GuiManager {
 	@Override
 	public DialogManager getDialogManager() {
 		if (dialogManager == null) {
-			AppW.debug("unimplemented");
+			App.debug("unimplemented");
 			// dialogManager = new DialogManagerWeb(app);
 		}
 		return dialogManager;
@@ -325,32 +325,32 @@ public class GuiManagerW extends GuiManager {
 	@Override
 	public void updateSpreadsheetColumnWidths() {
 		// TODO Auto-generated method stub
-		AppW.debug("unimplemented");
+		App.debug("unimplemented");
 		// if (spreadsheetView != null) {
 		// spreadsheetView.updateColumnWidths();
 		// }
 	}
 
 	public void resize(int width, int height) {
-		this.width = width;
-		this.height = height;
+		//this.width = width;
+		//this.height = height;
 
 		// experimental resize of canvas
 		// app.getEuclidianView1().setPreferredSize(width, height);
 		App.debug("why not use Settings for that?");
 	}
 
-	@Override
-	public void setToolBarDefinition(String toolBarDefinition) {
-		strCustomToolbarDefinition = toolBarDefinition;
+	public void setToolBarDefinition(Integer viewID, String toolBarDefinition) {
+		customToolbarDefinitions.put(viewID,toolBarDefinition);
 	}
 
-	@Override
-	public String getToolbarDefinition() {
-		if (strCustomToolbarDefinition == null) {
+	public String getToolbarDefinition(Integer viewID) {
+		if (customToolbarDefinitions.get(viewID) == null) {
+			if(viewID == App.VIEW_CAS)
+				return CASView.TOOLBAR_DEFINITION;
 			return geogebra.web.gui.toolbar.ToolBarW.getAllTools(app);
 		}
-		return strCustomToolbarDefinition;
+		return customToolbarDefinitions.get(viewID);
 	}
 
 	/**
@@ -768,7 +768,7 @@ public class GuiManagerW extends GuiManager {
 
 		urlSB.append(GeoGebraConstants.GEOGEBRA_WEBSITE);
 		urlSB.append("help/");
-		urlSB.append(app.getLanguage()); // eg en_GB
+		urlSB.append(app.getLocalization().getLanguage()); // eg en_GB
 
 		switch (type) {
 		case COMMAND:
@@ -1014,23 +1014,8 @@ public class GuiManagerW extends GuiManager {
 
 	public void setActiveToolbarId(int toolbarID) {
 		if (this.toolbarID != toolbarID) {
-			switch (toolbarID) {
-			case App.VIEW_CAS:
-				setToolBarDefinition(CASView.TOOLBAR_DEFINITION);
-				break;
-			case App.VIEW_EUCLIDIAN:
-				setToolBarDefinition(geogebra.web.gui.toolbar.ToolBarW
-				        .getAllTools(app));
-				break;
-			}
-			try{
-			updateToolbar();
-			}catch(Throwable t){
-				StackTraceElement[] s = t.getStackTrace();
-				for(StackTraceElement e:s){
-					App.debug(e.getClassName()+e.getMethodName()+e.getLineNumber());
-				}
-			}
+			toolbarPanel.setActiveToolbar(new Integer(toolbarID));
+			updateToolbar();			
 		}
 		this.toolbarID = toolbarID;
 	}

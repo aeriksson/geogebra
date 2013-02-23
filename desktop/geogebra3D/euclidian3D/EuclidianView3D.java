@@ -1327,13 +1327,6 @@ public class EuclidianView3D extends EuclidianViewND implements Printable {
 	public boolean hitAnimationButton(AbstractEvent e) {
 		return false;
 	}
-	
-	
-	@Override
-	public void repaintEuclidianView() {
-		//Application.debug("repaintEuclidianView");
-		//super.repaintEuclidianView();
-	}
 
 	@Override
 	public void resetMode() {
@@ -1447,6 +1440,7 @@ public class EuclidianView3D extends EuclidianViewND implements Printable {
 	 */
 	public void setClippingReduction(int value){
 		clippingCube.setReduction(value);
+		setViewChanged();
 		setWaitForUpdate();
 	}
 	
@@ -1807,7 +1801,7 @@ public class EuclidianView3D extends EuclidianViewND implements Printable {
 	 */
 	public void setCursor3DType(int v){
 		cursor3DType = v;
-		//Application.debug(""+v);
+		//App.debug(""+v);
 	}
 	
 
@@ -1957,8 +1951,15 @@ public class EuclidianView3D extends EuclidianViewND implements Printable {
 	
 	@Override
 	public void updatePreviewable(){
-
-		getPreviewDrawable().updatePreview();
+		
+		if (getCursor3DType()!=PREVIEW_POINT_NONE){
+			getPreviewDrawable().updatePreview();
+		}
+	}
+	
+	@Override
+	public void updatePreviewableForProcessMode(){
+		updatePreviewable();
 	}
 	
 	

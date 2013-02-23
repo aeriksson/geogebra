@@ -27,7 +27,6 @@ import geogebra.common.factories.AwtFactory;
 import geogebra.common.factories.CASFactory;
 import geogebra.common.factories.Factory;
 import geogebra.common.factories.SwingFactory;
-import geogebra.common.gui.GuiManager;
 import geogebra.common.gui.menubar.MenuInterface;
 import geogebra.common.gui.view.algebra.AlgebraView;
 import geogebra.common.io.MyXMLHandler;
@@ -39,7 +38,6 @@ import geogebra.common.kernel.ConstructionDefaults;
 import geogebra.common.kernel.Kernel;
 import geogebra.common.kernel.Macro;
 import geogebra.common.kernel.arithmetic.ExpressionNodeConstants.StringType;
-import geogebra.common.kernel.commands.CommandProcessor;
 import geogebra.common.kernel.geos.GeoAngle;
 import geogebra.common.kernel.geos.GeoElement;
 import geogebra.common.kernel.geos.GeoElementGraphicsAdapter;
@@ -58,7 +56,6 @@ import geogebra.common.util.Language;
 import geogebra.common.util.LowerCaseDictionary;
 import geogebra.common.util.NormalizerMinimal;
 import geogebra.common.util.StringUtil;
-import geogebra.common.util.Unicode;
 import geogebra.euclidian.DrawEquationD;
 import geogebra.euclidian.EuclidianControllerD;
 import geogebra.euclidian.EuclidianViewD;
@@ -73,6 +70,7 @@ import geogebra.factories.LaTeXFactoryD;
 import geogebra.factories.SwingFactoryD;
 import geogebra.factories.UtilFactoryD;
 import geogebra.gui.GuiManagerD;
+import geogebra.gui.app.GeoGebraFrame;
 import geogebra.gui.infobar.InfoBarD;
 import geogebra.gui.layout.DockPanel;
 import geogebra.gui.util.AnimatedGifEncoder;
@@ -143,8 +141,6 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.security.MessageDigest;
 import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -232,52 +228,9 @@ public class AppD extends App implements KeyEventDispatcher {
 	// LOCALE fields
 	// ==============================================================
 
-	private Locale currentLocale;
-	private Locale tooltipLocale = null;
+	
 
-	// supported GUI languages (from properties files)
-	private static ArrayList<Locale> supportedLocales = null;
-
-	public static ArrayList<Locale> getSupportedLocales() {
-		return getSupportedLocales(GeoGebraConstants.IS_PRE_RELEASE);
-	}
-
-	public static ArrayList<Locale> getSupportedLocales(boolean prerelease) {
-
-		if (supportedLocales != null) {
-			return supportedLocales;
-		}
-
-		supportedLocales = new ArrayList<Locale>();
-
-		Language[] languages = Language.values();
-
-		for (int i = 0; i < languages.length; i++) {
-
-			Language language = languages[i];
-
-			if (language.fullyTranslated || prerelease) {
-
-				if (language.locale.length() == 2) {
-					// eg "en"
-					supportedLocales.add(new Locale(language.locale));
-				} else if (language.locale.length() == 4) {
-					// eg "enGB" -> "en", "GB"
-					supportedLocales.add(new Locale(language.locale.substring(
-							0, 2), language.locale.substring(2, 4)));
-				} else if (language.locale.length() == 6) {
-					// eg "noNONY" -> "no", "NO", "NY"
-					supportedLocales.add(new Locale(language.locale.substring(
-							0, 2), language.locale.substring(2, 4),
-							language.locale.substring(4, 6)));
-				}
-			}
-
-		}
-
-		return supportedLocales;
-
-	}
+	
 
 	// ==============================================================
 	// FILE fields
@@ -315,18 +268,12 @@ public class AppD extends App implements KeyEventDispatcher {
 	// RESOURCE fields
 	// ==============================================================
 
-	private ResourceBundle rbmenu, rbmenuTT, rbcommand, rbcommandTT,
-			rbcommandEnglish, rbcommandOld, rbcommandScripting, rberror,
-			rbcolors, rbplain, rbplainTT, rbmenuEnglish, rbsymbol, rbsettings;
+	private ResourceBundle   
+			rbcommandEnglish,   
+			rbmenuEnglish, rbsettings;
+	
+	private final LocalizationD loc;
 
-	private static final String RB_MENU = "/geogebra/properties/menu";
-	private static final String RB_COMMAND = "/geogebra/properties/command";
-	private static final String RB_ERROR = "/geogebra/properties/error";
-	private static final String RB_PLAIN = "/geogebra/properties/plain";
-	private static final String RB_SYMBOL = "/geogebra/properties/symbols";
-	/** path to javaui properties (without extension) */
-	public static final String RB_JAVA_UI = "/geogebra/properties/javaui";
-	private static final String RB_COLORS = "/geogebra/properties/colors";
 	private static final String RB_SETTINGS = "/geogebra/export/settings";
 
 	// ==============================================================
@@ -391,7 +338,7 @@ public class AppD extends App implements KeyEventDispatcher {
 	private final FontManagerD fontManager;
 
 	/** GUI manager */
-	protected GuiManager guiManager;
+	protected GuiManagerD guiManager;
 
 	private GlobalKeyDispatcherD globalKeyDispatcher;
 
@@ -425,7 +372,7 @@ public class AppD extends App implements KeyEventDispatcher {
 	 * @param undoActive
 	 */
 	public AppD(CommandLineArguments args, JFrame frame, boolean undoActive) {
-		this(args, frame, null, null, undoActive);
+		this(args, frame, null, null, undoActive, new LocalizationD());
 	}
 
 	/*************************************************************
@@ -437,7 +384,7 @@ public class AppD extends App implements KeyEventDispatcher {
 	 */
 	public AppD(CommandLineArguments args, AppletImplementation appletImpl,
 			boolean undoActive) {
-		this(args, null, appletImpl, null, undoActive);
+		this(args, null, appletImpl, null, undoActive, new LocalizationD());
 	}
 
 	/*************************************************************
@@ -448,7 +395,7 @@ public class AppD extends App implements KeyEventDispatcher {
 	 * @param undoActive
 	 */
 	public AppD(CommandLineArguments args, Container comp, boolean undoActive) {
-		this(args, null, null, comp, undoActive);
+		this(args, null, null, comp, undoActive, new LocalizationD());
 	}
 
 	/*************************************************************
@@ -461,8 +408,9 @@ public class AppD extends App implements KeyEventDispatcher {
 	 * @param undoActive
 	 */
 	protected AppD(CommandLineArguments args, JFrame frame,
-			AppletImplementation appletImpl, Container comp, boolean undoActive) {
-
+			AppletImplementation appletImpl, Container comp, boolean undoActive,LocalizationD loc) {
+		this.loc = loc;
+		loc.setApp(this);
 		this.args = args;
 
 		if (args != null && !args.containsArg("silent")) {
@@ -745,7 +693,6 @@ public class AppD extends App implements KeyEventDispatcher {
 
 		geogebra.common.util.StringUtil.prototype = new geogebra.util.StringUtil();
 
-		geogebra.common.euclidian.HatchingHandler.prototype = new geogebra.euclidian.HatchingHandlerD();
 		geogebra.common.euclidian.EuclidianStatic.prototype = new geogebra.euclidian.EuclidianStaticD();
 
 		geogebra.common.euclidian.clipping.DoubleArrayFactory.prototype = new geogebra.euclidian.clipping.DoubleArrayFactory();
@@ -1297,6 +1244,11 @@ public class AppD extends App implements KeyEventDispatcher {
 		}
 		return fileName.substring(0, dotPos);
 	}
+	
+	@Override
+	public void createNewWindow(){
+		GeoGebraFrame.createNewWindow(null);
+	}
 
 	@Override
 	public void fileNew() {
@@ -1488,8 +1440,8 @@ public class AppD extends App implements KeyEventDispatcher {
 		if (!file.exists()) {
 			// show file not found message
 			JOptionPane.showConfirmDialog(getMainComponent(),
-					getError("FileNotFound") + ":\n" + file.getAbsolutePath(),
-					getError("Error"), JOptionPane.DEFAULT_OPTION,
+					getLocalization().getError("FileNotFound") + ":\n" + file.getAbsolutePath(),
+					getLocalization().getError("Error"), JOptionPane.DEFAULT_OPTION,
 					JOptionPane.WARNING_MESSAGE);
 			return false;
 		}
@@ -1507,7 +1459,7 @@ public class AppD extends App implements KeyEventDispatcher {
 			// characters
 		} catch (Exception e) {
 			setDefaultCursor();
-			showError(getError("LoadFileFailed") + ":\n" + file);
+			showError(getLocalization().getError("LoadFileFailed") + ":\n" + file);
 			e.printStackTrace();
 			return false;
 
@@ -2250,39 +2202,14 @@ public class AppD extends App implements KeyEventDispatcher {
 		return loc;
 	}
 
-	@Override
-	public void setTooltipFlag() {
-		if (tooltipLocale != null) {
-			tooltipFlag = true;
-		}
-	}
+	
 
 	@Override
 	public void setTooltipLanguage(String s) {
 
-		Locale locale = null;
+		boolean updateNeeded = loc.setTooltipLanguage(s);
 
-		for (int i = 0; i < getSupportedLocales().size(); i++) {
-			if (getSupportedLocales().get(i).toString().equals(s)) {
-				locale = getSupportedLocales().get(i);
-				break;
-			}
-		}
-
-		boolean updateNeeded = (rbplainTT != null) || (rbmenuTT != null);
-
-		rbplainTT = null;
-		rbmenuTT = null;
-
-		if (locale == null) {
-			tooltipLocale = null;
-		} else if (currentLocale.toString().equals(locale.toString())) {
-			tooltipLocale = null;
-		} else {
-			tooltipLocale = locale;
-		}
-
-		updateNeeded = updateNeeded || (tooltipLocale != null);
+		updateNeeded = updateNeeded || (loc.getTooltipLocale() != null);
 
 		if (updateNeeded) {
 			setLabels(); // update eg Tooltips for Toolbar
@@ -2290,19 +2217,8 @@ public class AppD extends App implements KeyEventDispatcher {
 
 	}
 
-	/**
-	 * @return locale of tooltips
-	 */
-	public Locale getTooltipLanguage() {
-		return tooltipLocale;
-	}
-
-	@Override
-	public String getTooltipLanguageString() {
-		if (tooltipLocale == null)
-			return null;
-		return tooltipLocale.toString();
-	}
+	
+	
 
 	@Override
 	public int getTooltipTimeout() {
@@ -2326,7 +2242,7 @@ public class AppD extends App implements KeyEventDispatcher {
 	public void setLanguage(Locale locale) {
 
 		if ((locale == null)
-				|| currentLocale.toString().equals(locale.toString())) {
+				|| loc.getLocale().toString().equals(locale.toString())) {
 			return;
 		}
 
@@ -2360,381 +2276,75 @@ public class AppD extends App implements KeyEventDispatcher {
 	StringBuilder testCharacters = new StringBuilder();
 
 	public void setLocale(Locale locale) {
-		if (locale == currentLocale) {
+		if (locale == loc.getLocale()) {
 			return;
 		}
-		Locale oldLocale = currentLocale;
+		Locale oldLocale = loc.getLocale();
 
 		// only allow special locales due to some weird server
 		// problems with the naming of the property files
-		currentLocale = getClosestSupportedLocale(locale);
-		updateResourceBundles();
+		loc.setLocale(locale);
 
 		// update font for new language (needed for e.g. chinese)
 		try {
-			fontManager.setLanguage(currentLocale);
+			fontManager.setLanguage(loc.getLocale());
 		} catch (Exception e) {
 			e.printStackTrace();
 			showError(e.getMessage());
 
 			// go back to previous locale
-			currentLocale = oldLocale;
-			updateResourceBundles();
+			loc.setLocale(oldLocale);
 		}
 
-		updateLanguageFlags(locale.getLanguage());
+		getLocalization().updateLanguageFlags(locale.getLanguage());
 
 	}
 
-	/**
-	 * Returns a locale object that has the same country and/or language as
-	 * locale. If the language of locale is not supported an English locale is
-	 * returned.
-	 */
-	private static Locale getClosestSupportedLocale(Locale locale) {
-		int size = getSupportedLocales().size();
+	
 
-		// try to find country and variant
-		String country = locale.getCountry();
-		String variant = locale.getVariant();
-
-		if (country.length() > 0) {
-			for (int i = 0; i < size; i++) {
-				Locale loc = getSupportedLocales().get(i);
-				if (country.equals(loc.getCountry())
-						&& variant.equals(loc.getVariant())) {
-					// found supported country locale
-					return loc;
-				}
-			}
-		}
-
-		// try to find language
-		String language = locale.getLanguage();
-		for (int i = 0; i < size; i++) {
-			Locale loc = getSupportedLocales().get(i);
-			if (language.equals(loc.getLanguage())) {
-				// found supported country locale
-				return loc;
-			}
-		}
-
-		// we didn't find a matching country or language,
-		// so we take English
-		return Locale.ENGLISH;
-	}
-
-	private void updateResourceBundles() {
-		if (rbmenu != null) {
-			rbmenu = MyResourceBundle.createBundle(RB_MENU, currentLocale);
-		}
-		if (rberror != null) {
-			rberror = MyResourceBundle.createBundle(RB_ERROR, currentLocale);
-		}
-		if (rbplain != null) {
-			rbplain = MyResourceBundle.createBundle(RB_PLAIN, currentLocale);
-		}
-		if (rbcommand != null) {
-			rbcommand = MyResourceBundle
-					.createBundle(RB_COMMAND, currentLocale);
-		}
-		if (rbcolors != null) {
-			rbcolors = MyResourceBundle.createBundle(RB_COLORS, currentLocale);
-		}
-		if (rbsymbol != null) {
-			rbsymbol = MyResourceBundle.createBundle(RB_SYMBOL, currentLocale);
-		}
-	}
+	
 
 	/**
 	 * @return current locale
 	 */
 	public Locale getLocale() {
-		return currentLocale;
+		return loc.getLocale();
 	}
 
 	// **************************************************************************
 	// PROPERTIES
 	// **************************************************************************
 
-	@Override
-	final public String getColor(String key) {
+	
 
-		if (key == null) {
-			return "";
-		}
+	
 
-		if ((key.length() == 5)
-				&& StringUtil.toLowerCase(key).startsWith("gray")) {
-			switch (key.charAt(4)) {
-			case '0':
-				return getColor("white");
-			case '1':
-				return getPlain("AGray", Unicode.fraction1_8);
-			case '2':
-				return getPlain("AGray", Unicode.fraction1_4); // silver
-			case '3':
-				return getPlain("AGray", Unicode.fraction3_8);
-			case '4':
-				return getPlain("AGray", Unicode.fraction1_2);
-			case '5':
-				return getPlain("AGray", Unicode.fraction5_8);
-			case '6':
-				return getPlain("AGray", Unicode.fraction3_4);
-			case '7':
-				return getPlain("AGray", Unicode.fraction7_8);
-			default:
-				return getColor("black");
-			}
-		}
 
-		if (rbcolors == null) {
-			initColorsResourceBundle();
-		}
 
-		try {
-			return rbcolors.getString(StringUtil.toLowerCase(key));
-		} catch (Exception e) {
-			return key;
-		}
-	}
+	
 
-	@Override
-	final public String reverseGetColor(String locColor) {
-		String str = StringUtil.removeSpaces(StringUtil.toLowerCase(locColor));
-		if (rbcolors == null) {
-			initColorsResourceBundle();
-		}
+	
 
-		try {
+	
 
-			Enumeration<String> enumer = rbcolors.getKeys();
-			while (enumer.hasMoreElements()) {
-				String key = enumer.nextElement();
-				if (str.equals(StringUtil.removeSpaces(StringUtil
-						.toLowerCase(rbcolors.getString(key))))) {
-					return key;
-				}
-			}
+	
 
-			return str;
-		} catch (Exception e) {
-			return str;
-		}
-	}
+	
 
-	@Override
-	final public String getPlain(String key) {
+	
 
-		if (tooltipFlag) {
-			return getPlainTooltip(key);
-		}
+	
 
-		if (rbplain == null) {
-			initPlainResourceBundle();
-		}
-
-		try {
-			return rbplain.getString(key);
-		} catch (Exception e) {
-			return key;
-		}
-	}
-
-	@Override
-	final public String getPlainTooltip(String key) {
-
-		if (tooltipLocale == null) {
-			return getPlain(key);
-		}
-
-		if (rbplainTT == null) {
-			initPlainTTResourceBundle();
-		}
-
-		try {
-			return rbplainTT.getString(key);
-		} catch (Exception e) {
-			return key;
-		}
-	}
-
-	@Override
-	final public String getSymbol(int key) {
-		if (rbsymbol == null) {
-			initSymbolResourceBundle();
-		}
-
-		String ret = null;
-
-		try {
-			ret = rbsymbol.getString("S." + key);
-		} catch (Exception e) {
-			// do nothing
-		}
-
-		if ("".equals(ret)) {
-			return null;
-		}
-		return ret;
-	}
-
-	@Override
-	final public String getSymbolTooltip(int key) {
-		if (rbsymbol == null) {
-			initSymbolResourceBundle();
-		}
-
-		String ret = null;
-
-		try {
-			ret = rbsymbol.getString("T." + key);
-		} catch (Exception e) {
-			// do nothing
-		}
-
-		if ("".equals(ret)) {
-			return null;
-		}
-		return ret;
-	}
-
-	// final public String reverseGetPlain(String str) {
-	// if (rbplain == null) {
-	// initPlainResourceBundle();
-	// }
-	//
-	// str = str.toLowerCase();
-	//
-	// try {
-	// Enumeration enumer = rbplain.getKeys();
-	//
-	// while (enumer.hasMoreElements()) {
-	// String key = (String)enumer.nextElement();
-	// if (rbplain.getString(key).toLowerCase().equals(str))
-	// return key;
-	// }
-	//
-	// return str;
-	// } catch (Exception e) {
-	// return str;
-	// }
-	// }
-
-	private void initPlainResourceBundle() {
-		rbplain = MyResourceBundle.createBundle(RB_PLAIN, currentLocale);
-		if (rbplain != null) {
-			kernel.updateLocalAxesNames();
-		}
-	}
-
-	private void initPlainTTResourceBundle() {
-		rbplainTT = MyResourceBundle.createBundle(RB_PLAIN, tooltipLocale);
-	}
-
-	private void initSymbolResourceBundle() {
-		rbsymbol = MyResourceBundle.createBundle(RB_SYMBOL, currentLocale);
-	}
-
-	private void initColorsResourceBundle() {
-		rbcolors = MyResourceBundle.createBundle(RB_COLORS, currentLocale);
-	}
+	
 
 	private boolean showConstProtNavigationNeedsUpdate = false;
 
-	@Override
-	final public String getMenu(String key) {
-
-		if (tooltipFlag) {
-			return getMenuTooltip(key);
-		}
-
-		if (rbmenu == null) {
-			rbmenu = MyResourceBundle.createBundle(RB_MENU, currentLocale);
-		}
-
-		try {
-			return rbmenu.getString(key);
-		} catch (Exception e) {
-			return key;
-		}
-	}
-
-	final public String getMenuTooltip(String key) {
-
-		if (tooltipLocale == null) {
-			return getMenu(key);
-		}
-
-		if (rbmenuTT == null) {
-			rbmenuTT = MyResourceBundle.createBundle(RB_MENU, tooltipLocale);
-		}
-
-		try {
-			return rbmenuTT.getString(key);
-		} catch (Exception e) {
-			return key;
-		}
-	}
-
-	@Override
-	final public String getError(String key) {
-		if (rberror == null) {
-			rberror = MyResourceBundle.createBundle(RB_ERROR, currentLocale);
-		}
-
-		try {
-			return rberror.getString(key);
-		} catch (Exception e) {
-			return key;
-		}
-	}
-
-	@Override
-	public void initCommand() {
-		if (rbcommand == null) {
-			rbcommand = MyResourceBundle
-					.createBundle(RB_COMMAND, currentLocale);
-		}
-
-	}
-
-	@Override
-	final public String getInternalCommand(String cmd) {
-		initTranslatedCommands();
-		Enumeration<String> enume;
-		String s;
-		enume = rbcommand.getKeys();
-		while (enume.hasMoreElements()) {
-			s = enume.nextElement();
-			// check isn't .Syntax, .SyntaxCAS, .Syntax3D
-			if (s.indexOf(syntaxStr) == -1) {
-				// make sure that when si[] is typed in script, it's changed to
-				// Si[] etc
-				if (getCommand(s).toLowerCase().equals(cmd.toLowerCase())) {
-					return s;
-				}
-			}
-		}
-		return null;
-	}
-
-	@Override
-	final public String getCommand(String key) {
-
-		initTranslatedCommands();
-
-		try {
-			return rbcommand.getString(key);
-		} catch (Exception e) {
-			return key;
-		}
-	}
+	
 
 	final public String getEnglishCommand(String key) {
 
 		if (rbcommandEnglish == null) {
-			rbcommandEnglish = MyResourceBundle.createBundle(RB_COMMAND,
+			rbcommandEnglish = MyResourceBundle.createBundle(LocalizationD.RB_COMMAND,
 					Locale.ENGLISH);
 		}
 
@@ -2748,7 +2358,7 @@ public class AppD extends App implements KeyEventDispatcher {
 	final public String getEnglishMenu(String key) {
 
 		if (rbmenuEnglish == null) {
-			rbmenuEnglish = MyResourceBundle.createBundle(RB_MENU,
+			rbmenuEnglish = MyResourceBundle.createBundle(LocalizationD.RB_MENU,
 					Locale.ENGLISH);
 		}
 		try {
@@ -2758,25 +2368,9 @@ public class AppD extends App implements KeyEventDispatcher {
 		}
 	}
 
-	@Override
-	protected String getSyntaxString() {
-		return syntaxStr;
-	}
+	
 
-	/**
-	 * @param key
-	 *            command name
-	 * @return CAS syntax
-	 */
-	public String getCommandSyntaxCAS(String key) {
-
-		String command = getCommand(key);
-		String syntax = getCommand(key + syntaxCAS);
-
-		syntax = syntax.replace("[", command + '[');
-
-		return syntax;
-	}
+	
 
 	/**
 	 * Gets particular setting for HTML export
@@ -2797,12 +2391,7 @@ public class AppD extends App implements KeyEventDispatcher {
 		}
 	}
 
-	/**
-	 * @return whether properties bundles were initiated (at least plain)
-	 */
-	public boolean propertiesFilesPresent() {
-		return rbplain != null;
-	}
+	
 
 	/**
 	 * Shows localized help message
@@ -2902,7 +2491,7 @@ public class AppD extends App implements KeyEventDispatcher {
 			getGuiManager().setLabels();
 		}
 
-		if (rbplain != null) {
+		if (loc.propertiesFilesPresent()) {
 			kernel.updateLocalAxesNames();
 		}
 
@@ -3189,7 +2778,7 @@ public class AppD extends App implements KeyEventDispatcher {
 	// GUI Getters/Setters
 	// **************************************************************************
 
-	protected GuiManager newGuiManager() {
+	protected GuiManagerD newGuiManager() {
 		return AppD2.newGuiManager(this);
 	}
 
@@ -3197,7 +2786,7 @@ public class AppD extends App implements KeyEventDispatcher {
 	 * @return this application's GUI manager.
 	 */
 	@Override
-	final public synchronized GuiManager getGuiManager() {
+	final public synchronized GuiManagerD getGuiManager() {
 		return guiManager;
 	}
 
@@ -3429,8 +3018,8 @@ public class AppD extends App implements KeyEventDispatcher {
 	 */
 	public String getToolTooltipHTML(int mode) {
 
-		if (tooltipLocale != null) {
-			tooltipFlag = true;
+		if (loc.getTooltipLocale() != null) {
+			loc.setTooltipFlag();
 		}
 
 		StringBuilder sbTooltip = new StringBuilder();
@@ -3440,7 +3029,7 @@ public class AppD extends App implements KeyEventDispatcher {
 		sbTooltip.append(StringUtil.toHTMLString(getToolHelp(mode)));
 		sbTooltip.append("</html>");
 
-		tooltipFlag = false;
+		loc.clearTooltipFlag();
 
 		return sbTooltip.toString();
 
@@ -3709,8 +3298,8 @@ public class AppD extends App implements KeyEventDispatcher {
 			 * missing file was loaded through the command line, which causes
 			 * some nasty rendering problems.
 			 */
-			JOptionPane.showConfirmDialog(null, getError("FileNotFound")
-					+ ":\n" + file.getAbsolutePath(), getError("Error"),
+			JOptionPane.showConfirmDialog(null, getLocalization().getError("FileNotFound")
+					+ ":\n" + file.getAbsolutePath(), getLocalization().getError("Error"),
 					JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE);
 			return false;
 		}
@@ -3763,7 +3352,7 @@ public class AppD extends App implements KeyEventDispatcher {
 		} catch (Exception e) {
 			setCurrentFile(null);
 			e.printStackTrace();
-			showError(getError("LoadFileFailed") + ":\n" + file);
+			showError(getLocalization().getError("LoadFileFailed") + ":\n" + file);
 			return false;
 		} finally {
 			initing = false;
@@ -4423,12 +4012,12 @@ public class AppD extends App implements KeyEventDispatcher {
 
 	@Override
 	public void showError(String key) {
-		showErrorDialog(getError(key));
+		showErrorDialog(getLocalization().getError(key));
 	}
 
 	@Override
 	public void showError(String key, String error) {
-		showErrorDialog(getError(key) + ":\n" + error);
+		showErrorDialog(getLocalization().getError(key) + ":\n" + error);
 	}
 
 	@Override
@@ -4447,7 +4036,7 @@ public class AppD extends App implements KeyEventDispatcher {
 
 		Object[] options = { getPlain("OK"), getPlain("ShowOnlineHelp") };
 		int n = JOptionPane.showOptionDialog(mainComp, e.getLocalizedMessage(),
-				getPlain("ApplicationName") + " - " + getError("Error"),
+				getPlain("ApplicationName") + " - " + getLocalization().getError("Error"),
 				JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, // do
 																				// not
 																				// use
@@ -4490,7 +4079,7 @@ public class AppD extends App implements KeyEventDispatcher {
 				JOptionPane
 						.showConfirmDialog(mainComp, msg,
 								getPlain("ApplicationName") + " - "
-										+ getError("Error"),
+										+ getLocalization().getError("Error"),
 								JOptionPane.DEFAULT_OPTION,
 								JOptionPane.WARNING_MESSAGE);
 				isErrorDialogShowing = false;
@@ -4844,7 +4433,7 @@ public class AppD extends App implements KeyEventDispatcher {
 
 	
 	
-	public void checkCommands(HashMap<String, CommandProcessor> map) {
+	/*public void checkCommands(HashMap<String, CommandProcessor> map) {
 		initTranslatedCommands();
 
 		if (rbcommand == null) {
@@ -4866,7 +4455,7 @@ public class AppD extends App implements KeyEventDispatcher {
 				}
 			}
 		}
-	}
+	}*/
 
 	@Override
 	public void setScrollToShow(boolean b) {
@@ -4932,10 +4521,7 @@ public class AppD extends App implements KeyEventDispatcher {
 		return getGuiManager().showView(view);
 	}
 
-	@Override
-	public String getLanguage() {
-		return getLocale().getLanguage();
-	}
+	
 
 	@Override
 	public void evalJavaScript(App app, String script, String arg) {
@@ -5046,41 +4632,7 @@ public class AppD extends App implements KeyEventDispatcher {
 		return tableModel;
 	}
 
-	@Override
-	public void initScriptingBundle() {
-		rbcommandScripting = MyResourceBundle.createBundle(RB_COMMAND,
-				new Locale(getScriptingLanguage()));
-		debug(rbcommandScripting.getLocale());
 
-	}
-
-	@Override
-	public String getScriptingCommand(String internal) {
-		String ret = internal;
-		try {
-			ret = rbcommandScripting.getString(internal);
-		} catch (Exception e) {
-			App.error(internal + " missing from command.properties");
-		}
-		return ret;
-	}
-
-	@Override
-	protected boolean isCommandChanged() {
-		// TODO Auto-generated method stub
-		return rbcommandOld != rbcommand;
-	}
-
-	@Override
-	protected void setCommandChanged(boolean b) {
-		rbcommandOld = rbcommand;
-
-	}
-
-	@Override
-	protected boolean isCommandNull() {
-		return rbcommand == null;
-	}
 
 	@Override
 	public boolean isRightClick(AbstractEvent e) {
@@ -5217,7 +4769,7 @@ public class AppD extends App implements KeyEventDispatcher {
 	 */
 	public String borderEast() {
 		// return app.borderEast();
-		if (isRightToLeftReadingOrder()) {
+		if (getLocalization().isRightToLeftReadingOrder()) {
 			return "West";
 		} else {
 			return "East";
@@ -5232,7 +4784,7 @@ public class AppD extends App implements KeyEventDispatcher {
 	 */
 	public String borderWest() {
 		// return app.borderWest();
-		if (!isRightToLeftReadingOrder()) {
+		if (!getLocalization().isRightToLeftReadingOrder()) {
 			return "West";
 		} else {
 			return "East";
@@ -5246,7 +4798,7 @@ public class AppD extends App implements KeyEventDispatcher {
 	 * return int rather than FlowLayout.LEFT so we're not dependent on awt
 	 */
 	public int flowLeft() {
-		if (!isRightToLeftReadingOrder()) {
+		if (!getLocalization().isRightToLeftReadingOrder()) {
 			return 0; // left
 		} else {
 			return 2; // right
@@ -5260,7 +4812,7 @@ public class AppD extends App implements KeyEventDispatcher {
 	 * return int rather than FlowLayout.RIGHT so we're not dependent on awt
 	 */
 	public int flowRight() {
-		if (isRightToLeftReadingOrder()) {
+		if (getLocalization().isRightToLeftReadingOrder()) {
 			return 0; // left
 		} else {
 			return 2; // right
@@ -5383,7 +4935,7 @@ public class AppD extends App implements KeyEventDispatcher {
 	// **************************************************************************
 
 	public ComponentOrientation getComponentOrientation() {
-		return isRightToLeftReadingOrder() ? ComponentOrientation.RIGHT_TO_LEFT
+		return getLocalization().isRightToLeftReadingOrder() ? ComponentOrientation.RIGHT_TO_LEFT
 				: ComponentOrientation.LEFT_TO_RIGHT;
 	}
 
@@ -5391,8 +4943,8 @@ public class AppD extends App implements KeyEventDispatcher {
 	private ListCellRenderer renderer = new DefaultListCellRenderer();
 
 	public void setComponentOrientation(Component c) {
-
-		ComponentOrientation orientation = isRightToLeftReadingOrder() ? ComponentOrientation.RIGHT_TO_LEFT
+		boolean rtl = getLocalization().isRightToLeftReadingOrder();
+		ComponentOrientation orientation = rtl ? ComponentOrientation.RIGHT_TO_LEFT
 				: ComponentOrientation.LEFT_TO_RIGHT;
 		c.setComponentOrientation(orientation);
 		// c.applyComponentOrientation(orientation);
@@ -5405,12 +4957,12 @@ public class AppD extends App implements KeyEventDispatcher {
 			}
 		} else if (c instanceof JTextField) {
 			((JTextField) c)
-					.setHorizontalAlignment(isRightToLeftReadingOrder() ? JTextField.RIGHT
+					.setHorizontalAlignment(rtl ? JTextField.RIGHT
 							: JTextField.LEFT);
 		} else if (c instanceof JComboBox) {
 			JComboBox cb = (JComboBox) c;
 			((JLabel) renderer)
-					.setHorizontalAlignment(isRightToLeftReadingOrder() ? SwingConstants.RIGHT
+					.setHorizontalAlignment(rtl ? SwingConstants.RIGHT
 							: SwingConstants.LEFT);
 			cb.setRenderer(renderer);
 		} else if (c instanceof Container) {
@@ -5429,7 +4981,7 @@ public class AppD extends App implements KeyEventDispatcher {
 	 * @param panel
 	 */
 	public void setFlowLayoutOrientation(JPanel panel) {
-		if (isRightToLeftReadingOrder())
+		if (getLocalization().isRightToLeftReadingOrder())
 			panel.setLayout(new FlowLayout(FlowLayout.RIGHT));
 		else
 			panel.setLayout(new FlowLayout(FlowLayout.LEFT));
@@ -5520,5 +5072,10 @@ public class AppD extends App implements KeyEventDispatcher {
 		
 		gifEncoder.finish();
 
+	}
+
+	@Override
+	public LocalizationD getLocalization() {
+		return loc;
 	}
 }

@@ -58,7 +58,7 @@ import geogebra.common.kernel.prover.AbstractProverReciosMethod;
 import geogebra.common.kernel.prover.NoSymbolicParametersException;
 import geogebra.common.kernel.prover.Polynomial;
 import geogebra.common.kernel.prover.Variable;
-import geogebra.common.main.App;
+import geogebra.common.main.Localization;
 import geogebra.common.plugin.EuclidianStyleConstants;
 import geogebra.common.plugin.GeoClass;
 import geogebra.common.plugin.Operation;
@@ -80,7 +80,7 @@ import java.util.TreeSet;
  * @author Markus
  */
 public class GeoPoint extends GeoVec3D implements VectorValue,
-		PathOrPoint, Translateable, PointRotateable, Mirrorable, Dilateable,
+		PathOrPoint, PointRotateable, Mirrorable, Dilateable,
 		MatrixTransformable, ConicMirrorable, GeoPointND, Animatable,
 		Transformable, SpreadsheetTraceable, SymbolicParametersAlgo,
 		SymbolicParametersBotanaAlgo {
@@ -850,6 +850,16 @@ public class GeoPoint extends GeoVec3D implements VectorValue,
 	}
 
 	/**
+	 * Convenience method to tell whether these two points are in the same place
+	 * @param P first point
+	 * @param Q second point
+	 * @return true if they are in the same place
+	 */
+	final public static boolean samePosition(GeoPoint P, GeoPoint Q) {
+		return Kernel.isZero(P.distance(Q));
+	}
+
+	/**
 	 * returns the square distance of this point and P (may return infinty or
 	 * NaN).
 	 * @param P other point
@@ -1159,7 +1169,7 @@ public class GeoPoint extends GeoVec3D implements VectorValue,
 			break;
 
 		default:
-			separator = Character.toString(App.unicodeComma);
+			separator = Character.toString(Localization.unicodeComma);
 		}
 
 		sbBuildValueString.append(separator);
@@ -1210,7 +1220,7 @@ public class GeoPoint extends GeoVec3D implements VectorValue,
 				break;
 
 			default:
-				sbBuildValueString.append(App.unicodeComma);
+				sbBuildValueString.append(Localization.unicodeComma);
 				sbBuildValueString.append(" ");
 			}
 			sbBuildValueString.append(kernel.format(y, tpl));
@@ -1779,12 +1789,12 @@ public class GeoPoint extends GeoVec3D implements VectorValue,
 		if (oldGeo.isGeoPoint() && ((GeoPoint) oldGeo).locateableList != null) {
 
 			locateableList = ((GeoPoint) oldGeo).locateableList;
-			for (Locateable loc : locateableList) {
-				GeoPointND[] pts = loc.getStartPoints();
+			for (Locateable locPoint : locateableList) {
+				GeoPointND[] pts = locPoint.getStartPoints();
 				for (int i = 0; i < pts.length; i++)
 					if (pts[i] == (GeoPoint) oldGeo)
 						pts[i] = this;
-				loc.toGeoElement().updateRepaint();
+				locPoint.toGeoElement().updateRepaint();
 			}
 			((GeoPoint) oldGeo).locateableList = null;
 		}
@@ -2214,8 +2224,8 @@ public class GeoPoint extends GeoVec3D implements VectorValue,
 	
 	
 
-	public double distanceToPath(PathOrPoint path){
-		return path.toGeoElement().distance(this);
+	public double distanceToPath(PathOrPoint path1){
+		return path1.toGeoElement().distance(this);
 	}
 
 	

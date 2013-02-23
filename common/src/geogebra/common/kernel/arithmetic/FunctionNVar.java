@@ -328,7 +328,7 @@ public class FunctionNVar extends ValidExpression implements FunctionalNVar, Var
 			App.debug("InvalidFunction:"
 					+ expression.toString(StringTemplate.defaultTemplate) + " " + ev.toString(StringTemplate.defaultTemplate)
 					+ ev.getClass().getName());
-			throw new MyError(kernel.getApplication(), "InvalidFunction");
+			throw new MyError(kernel.getApplication().getLocalization(), "InvalidFunction");
 		}
 	}
 
@@ -922,5 +922,31 @@ public class FunctionNVar extends ValidExpression implements FunctionalNVar, Var
 	public boolean isDefined() {
 		return true;
 	}
+	
+	/**
+	 * @param n order of derivative
+	 * @return derivative calculated without the CAS
+	 */
+	public FunctionNVar getDerivativeNoCAS(FunctionVariable fv, int n) {
+		
+		ExpressionNode expDeriv = expression;
+		
+		for (int i = 0 ; i < n ; i++) {
+			expDeriv = expDeriv.derivative(fv);
+		}
+		
+		return new FunctionNVar(expDeriv, fVars);
+	}
+
+	/**
+	 * @param n order of derivative
+	 * @return integral calculated without the CAS
+	 * (will work only for very simple functions eg sin(3x))
+	 */
+	public FunctionNVar getIntegralNoCAS(FunctionVariable fv) {
+		
+		return new FunctionNVar(expression.integral(fv), fVars);
+	}
+
 
 }

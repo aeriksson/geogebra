@@ -418,6 +418,8 @@ public abstract class Drawable extends DrawableND {
 
 	private boolean forcedLineType;
 
+	private HatchingHandler hatchingHandler;
+
 	/**
 	 * Set fixed line type and ignore line type of the geo. Needed for
 	 * inequalities.
@@ -495,21 +497,21 @@ public abstract class Drawable extends DrawableND {
 	protected void fill(GGraphics2D g2, GShape fillShape, boolean usePureStroke) {
 		if (isForceNoFill())
 			return;
-		if (geo.getFillType() == GeoElement.FILL_HATCH) {
-
+		if (geo.isHatchingEnabled()) {
 			// use decoStroke as it is always full (not dashed/dotted etc)
-			geogebra.common.euclidian.HatchingHandler.setHatching(g2, decoStroke,
+			getHatchingHandler().setHatching(g2, decoStroke,
 					geo.getObjectColor(),
 					geo.getBackgroundColor(),
 					geo.getAlphaValue(), geo.getHatchingDistance(),
-					geo.getHatchingAngle());
+					geo.getHatchingAngle(),
+					geo.getFillType());
 			if (usePureStroke)
 				EuclidianStatic.fillWithValueStrokePure(fillShape, g2);
 			else
 				g2.fill(fillShape);
 
-		} else if (geo.getFillType() == GeoElement.FILL_IMAGE) {
-			geogebra.common.euclidian.HatchingHandler.setTexture(g2, geo, geo.getAlphaValue());
+		} else if (geo.getFillType() == GeoElement.FillType.IMAGE) {
+			getHatchingHandler().setTexture(g2, geo, geo.getAlphaValue());
 			g2.fill(fillShape);
 		} else if (geo.getAlphaValue() > 0.0f) {
 			g2.setPaint(geo.getFillColor());
@@ -527,6 +529,14 @@ public abstract class Drawable extends DrawableND {
 			g2.fill(fillShape);
 		}
 
+	}
+	
+	private HatchingHandler getHatchingHandler() {
+		if (hatchingHandler == null) {
+			hatchingHandler = new HatchingHandler();
+		}
+		
+		return hatchingHandler;
 	}
 
 	/**
@@ -578,5 +588,4 @@ public abstract class Drawable extends DrawableND {
 	public boolean isFilled(){
 		return (geo.getAlphaValue() > 0.0f || geo.isHatchingEnabled());
 	}
-
 }

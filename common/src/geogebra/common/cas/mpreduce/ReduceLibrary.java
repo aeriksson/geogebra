@@ -22,7 +22,7 @@ public class ReduceLibrary {
 		eval("linelength 50000;");
 		eval("scientific_notation {16,5};");
 		eval("on fullroots;");	
-		// set default switches
+		// set default switches Solve[{x+y=2,x=y}]
 		// (note: off factor turns on exp, so off exp must be placed later)
 		eval("numrules := {exp(~t*i)=>cos(~t)+i*sin(~t)};");
 		eval("procedure resetsettings(keepin,taystd,curx,cury);begin;"
@@ -31,7 +31,7 @@ public class ReduceLibrary {
 				+ "numeric!!:=0$ precision 30; "
 				+ "clearrules numrules;"
 				+ "print_precision 16; "
-				+ "off allfac,revpri, complex, rounded, numval, factor, div; "
+				+ "off nat, allfac,revpri, complex, rounded, numval, factor, div; "
 				+ "off combinelogs, expandlogs, combineexpt,rational,rationalize;"
 				+ "on pri;" + "return 1;" + "end;");
 		eval("procedure degasin(x); asin(x)*180/pi*'\u00b0;");
@@ -55,6 +55,8 @@ public class ReduceLibrary {
 				+ "cot(~b*\u00b0/~a)=>cot(b/a*pi/180),"
 				+ "sec(~b*\u00b0/~a)=>sec(b/a*pi/180),"
 				+ "csc(~b*\u00b0/~a)=>csc(b/a*pi/180)}");
+		eval("trigrules:={ tan(~x)*cos(~x)=>sin(x)," 
+				+ "cot(~x)*sin(~x)=>cos(x)}");
 		eval("intrules!!:={"
 				+ "int(~w/~x,~x) => w*log(abs(x)) when freeof(w,x),"
 				+ "int(~w/(~x+~a),~x) => w*log(abs(x+a)) when freeof(w,x) and freeof(a,x),"
@@ -83,7 +85,8 @@ public class ReduceLibrary {
 		eval("operator iffun;");
 		eval("operator ifelsefun;");
 		eval("let { ifelsefun(~x,~a,~b) => ~a when x='true,  ifelsefun(~x,~a,~b) => ~b when x='false, "
-				+ "iffun(~x,~a) => ~a when x='true, iffun(~x,~a) => '? when x='false}");
+				+ "iffun(~x,~a) => ~a when x='true, iffun(~x,~a) => '? when x='false," +
+				"df(iffun(~cond,~f),~x)=>iffun(cond,df(f,x)),df(ifelsefun(~cond,~f,~g),~x)=>iffun(cond,df(f,x),df(g,x))}");
 		eval("let {abs(pi)=>pi,abs(e)=>e,sign(pi)=1,sign(e)=1," + "sqrt(~a)*sqrt(~b)=>sqrt(a*b)};");
 		String xBig=" mynumberp(~x)='true and mycompare(~x,1)>0 ";
 		String xNear0="mynumberp(~x)='true and mycompare(abs(~x),1)<0";
@@ -115,12 +118,11 @@ public class ReduceLibrary {
 				+ "	limit(~x^~n/~b,~n,-infinity) => -infinity when "+xJustAbove0+" and numberp(~b) and ~b<0,"
 				+ "	limit(~a*~x^~n/~b,~n,-infinity) => infinity when "+xJustAbove0+" and numberp(~a) and numberp(~b) and ((~a>0 and ~b>0) or (~a<0 and ~b<0)),"
 				+ "	limit(~a*~x^~n/~b,~n,-infinity) => -infinity when "+xJustAbove0+" and numberp(~a) and numberp(~b) and ((~a<0 and ~b>0) or (~a>0 and ~b<0))}"));
-
-
+		
 		eval("let {impart(arbint(~w)) => 0, arbint(~w)*i =>  0};");
-		eval("let {atan(sin(~x)/cos(~x))=>x, " + "acos(1/sqrt(2)) => pi/4"
-				+ "};");
-
+		eval("let {atan(sin(~x)/cos(~x))=>x, " + "acos(1/sqrt(2)) => pi/4,"
+				+ "factorial(~n) => gamma(n+1)};");
+//Intersect[x^2-3x/2+2,x/2+2]
 		eval("solverules:={" + "logb(~x,~b)=>log(x)/log(b),"
 				+ "log10(~x)=>log(x)/log(10)" + "};");
 		eval("procedure mkconditions(xx,yy,pts);for each el in mkdepthone(list(pts)) collect list(xx=xcoord(el),yy=ycoord(el));");
@@ -555,12 +557,14 @@ public class ReduceLibrary {
 				+ "return b;" + "end;");
 
 		eval("procedure existingsolutions(eqn,sol);"
-				+ "begin scalar ret!!, bool!!; ret!!:={};"
-				+ "for each solution in sol do <<" + "  bool!!:=1;"
+				+ "begin scalar ret!!, bool!!, exp!!; ret!!:={};"
+				+ "for each solution in sol do <<" 
+				+ "  bool!!:=1;"
 				+ "  for each eq in eqn do <<"
 				+ "    if sub(solution,den(eq))=0 then bool!!:=0;"
-				+ "    on expandlogs;"
-				+ "    if sub(solution,num(eq)) neq 0 then bool!!:=0; "
+				+ "    exp!!:=sub(solution,num(eq)); "		// first calculate the substitution because
+				+ "    on expandlogs;"						// expandlogs can destroy our expression
+				+ "    if exp!! neq 0 then bool!!:=0; "		// example: on expandlogs; log((-2)^2)-log(4); yields - 2*log(2) + 2*log(-2);
 				+ "    off expandlogs;>>;"
 				+ "  if bool!! then ret!!:=(solution).ret!!;>>;"
 				+ "return reverse ret!!;" + "end;");
@@ -572,9 +576,10 @@ public class ReduceLibrary {
 				+ " if part(eqn,0)='sgreaterequal then <<ineqop:=part(eqn,0); ineq:=part(eqn,0):='geq; isineq:=1>>;"
 				+ " if part(eqn,0)='sless then <<ineqop:=part(eqn,0); ineq:=part(eqn,0):='lessp; isineq:=1>>;"
 				+ " if part(eqn,0)='slessequal then <<ineqop:=part(eqn,0); ineq:=part(eqn,0):='leq; isineq:=1>>;"
-				+ " if isineq then eqn:=lhs(ineq)=rhs(ineq);"
+				+ " if isineq then eqn:=part(eqn,0):=equal;"
 				+ " eqn:=mkdepthone({eqn});"
 				+ " let solverules;"
+				+ " let trigrules;"
 				+ " if arglength(eqn)>-1 and part(eqn,0)='list then"
 				+ "    eqn:=for each x in eqn collect"
 				+ "      if freeof(x,=) then x else subtraction(lhs(x),rhs(x))"
@@ -587,6 +592,7 @@ public class ReduceLibrary {
 				+ " sign!!:={};if not(isineq) then <<for i:=1:arglength(eqn) do sign!!:=posneg(part(eqn,1)).sign!!;>>;"
 				+ " if not(isineq) and (not(freeof(sign!!,nzpoz)) or not(freeof(sign!!,nzneg))) then return {};"
 				+ " solutions!!:=if bigexponents(eqn)>0 then list() else solve(eqn,var);"
+				+ " clearrules trigrules;" 
 				// to prevent Solve command to yield non-existing solutions
 				// such as solve({c*a^(-2)=15/4,c*a^(-4)=15/64},{a,c}) does
 				// {a=0,c=0}
@@ -639,7 +645,7 @@ public class ReduceLibrary {
 				+ "    solutionset:=append(solutionset,{part(part(densol,j),2)});"
 				+ " >>;"
 				+ "densol:=temp1!!;"
-				+ "solutionset:=mysortdec(solutionset); "
+				+ "solutionset:=mysortgen(solutionset,sgreater,sequal); "
 				+ "solutionset:=append({infinity},solutionset); solutionset:=append(solutionset,{-infinity});"
 				+ "ineqsol:={};"
 				+ "nmroots:=length(solutionset);"
@@ -677,7 +683,10 @@ public class ReduceLibrary {
 				+
 				// may happen that other!! is "we don't know" and solutions!! is
 				// "no answer"
-				" return if part(other!!,1)=1 then part(other!!,2) else part(solutions!!,2);"
+				" expr!!:=part(solutions!!,2);"+
+				" return if part(other!!,1)=1 then part(other!!,2)" +
+				" 	else if isineq or not(freeof(expr!!,'arbcomplex)) then expr!!" + 
+				"   else mysortgen(expr!!,mysolsetless,mysolsetequal)"
 				+ " end;");
 		eval("procedure simplifyexp(x);"
 				+ " begin scalar y;"
@@ -725,6 +734,7 @@ public class ReduceLibrary {
 				+ " begin scalar solutions!!, bool!!;"
 				+ "  eqn:=mkdepthone({eqn});"
 				+ "  let solverules;"
+				+ "  let trigrules;"
 				+ "  if arglength(eqn)>-1 and part(eqn,0)='list then"
 				+ "    eqn:=for each x in eqn collect"
 				+ "      if freeof(x,=) then x else subtraction(lhs(x),rhs(x))"
@@ -739,7 +749,9 @@ public class ReduceLibrary {
 				+ "      		bool!!:=0;" + "      if bool!!=1 then"
 				+ "        {sol}" + "      else if bool!!=0 then"
 				+ "        {{var='?}}" + "      >>;"
-				+ "  clearrules solverules;" + "  return mkset(solutions!!);"
+				+ "  clearrules solverules;" 
+				+ "  clearrules trigrules;" 
+				+ "  return mkset(solutions!!);"
 				+ " end;");
 
 		eval("procedure mycsolve1(eqn);"
@@ -1112,17 +1124,15 @@ public class ReduceLibrary {
 		// mygreatersort and myequalsort are needed when trying to compare
 		// rational numbers
 		// eg. sqrt(2) and 2
-		eval("procedure mygreatersort(a,b);" + "begin;"
+		// mysortgen(list, compareop, equalop) where
+		// list of numbers - compareop = ( sless | sgreater), equalop = sequal
+		// one can use any kind of compare operator if it can be used on the elements of the list
+		eval("procedure mycomparesort(a,b,compareop);" + "begin;"
 				+ "on rounded, roundall, numval;"
-				+ "ret:=if sgreater(a,b)=true then 1 else 0;"
+				+ "ret:=if compareop(a,b)=true then 1 else 0;"
 				+ "if numeric!!=0 then off rounded, roundall, numval;"
 				+ "return ret;" + "end;");
-		eval("procedure myequalsort(a,b);" + "begin;"
-				+ "on rounded, roundall, numval;"
-				+ "ret:=if sequal(a,b)=true then 1 else 0;"
-				+ "if numeric!!=0 then off rounded, roundall, numval;"
-				+ "return ret;" + "end;");
-		eval("procedure mysortdec a;"
+		eval("procedure mysortgen(a,gtltop,equalop);"
 				+ "begin scalar leftlist, rightlist, eqlist;"
 				+ " leftlist:=list();"
 				+ " rightlist:=list();"
@@ -1131,26 +1141,30 @@ public class ReduceLibrary {
 				+ " if length(a)<2 then a"
 				+ " else <<"
 				+ "  for each elem in a do"
-				+ "    if mygreatersort(elem,part(a,1)) then"
+				+ "    if mycomparesort(elem,part(a,1),gtltop) then"
 				+ "     leftlist:=elem . leftlist"
-				+ "    else if myequalsort(elem,part(a,1)) then"
+				+ "    else if mycomparesort(elem,part(a,1),equalop) then"
 				+ "     eqlist:=elem . eqlist"
 				+ "    else"
 				+ "     rightlist:=elem . rightlist;"
 				+ "  if length(leftlist)=0 and length(rightlist)=0 then"
 				+ "    eqlist"
 				+ "  else if length(leftlist)=0 then"
-				+ "    append(eqlist, mysortdec(rightlist))"
+				+ "    append(eqlist, mysortgen(rightlist,gtltop,equalop))"
 				+ "  else if length(rightlist)=0 then"
-				+ "    append(mysortdec(leftlist), eqlist)"
+				+ "    append(mysortgen(leftlist,gtltop,equalop), eqlist)"
 				+ "  else"
-				+ "    append(append(mysortdec(leftlist),eqlist),mysortdec(rightlist))"
+				+ "    append(append(mysortgen(leftlist,gtltop,equalop),eqlist),mysortgen(rightlist,gtltop,equalop))"
 				+ " >> " + "end;");
+		eval("procedure mysolless(a,b); sless(rhs(a), rhs(b));");
+		eval("procedure mysolleq(a,b); sequal(rhs(a), rhs(b));");
+		eval("procedure mysolsetless(a,b); sless(rhs(first(a)), rhs(first(b)));");
+		eval("procedure mysolsetequal(a,b); sequal(rhs(first(a)), rhs(first(b)));");
 
 		eval("procedure mymember(a, list);"
-				+ "begin;boole:=0;jj:=1;"
-				+ "while jj<=length(list) and not boole do <<if part(list,jj)=a then boole:=1;jj:=jj+1;>>;"
-				+ "return boole;" + "end;");
+				+ "begin;scalar boole!!, j!!;boole!!:=0;j!!:=1;"
+				+ "while j!!<=length(list) and not boole!! do <<if part(list,j!!)=a then boole!!:=1;j!!:=j!!+1;>>;"
+				+ "return boole!!;" + "end;");
 
 		eval("procedure myint(exp, var, from, upto);"
 				+ "begin scalar upper, lower;"
@@ -1167,9 +1181,10 @@ public class ReduceLibrary {
 				+ "    if numberp(element) then" + "      list()" + "    else"
 				+ "      list(element)" + "  else"
 				+ "    getkernels(part(element,0):=list);");
-
+		eval("groebnerloaded:=0;");
 		eval("procedure mymainvars(a,n);"
 				+ "begin scalar variables!!, result!!;"
+				+ " if not (groebnerloaded=1) then <<load_package groebner; groebnerloaded:=1>>;"
 				+ " variables!!:=gvars(getkernels(list(a)));"
 				+ " result!!:="
 				+ " if length(variables!!)<n then <<"

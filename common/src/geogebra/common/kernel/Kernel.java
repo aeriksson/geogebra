@@ -39,7 +39,6 @@ import geogebra.common.kernel.geos.GeoDummyVariable;
 import geogebra.common.kernel.geos.GeoElement;
 import geogebra.common.kernel.geos.GeoElementSpreadsheet;
 import geogebra.common.kernel.geos.GeoFunction;
-import geogebra.common.kernel.geos.GeoFunctionConditional;
 import geogebra.common.kernel.geos.GeoFunctionNVar;
 import geogebra.common.kernel.geos.GeoImage;
 import geogebra.common.kernel.geos.GeoInterval;
@@ -70,6 +69,7 @@ import geogebra.common.kernel.optimization.ExtremumFinder;
 import geogebra.common.kernel.parser.Parser;
 import geogebra.common.main.App;
 import geogebra.common.main.CasType;
+import geogebra.common.main.Localization;
 import geogebra.common.main.MyError;
 import geogebra.common.plugin.GeoClass;
 import geogebra.common.plugin.Operation;
@@ -418,7 +418,7 @@ public class Kernel {
 	 * @return the Evaluator for ExpressionNode
 	 */
 	public ExpressionNodeEvaluator newExpressionNodeEvaluator() {
-		return new ExpressionNodeEvaluator(app);
+		return new ExpressionNodeEvaluator(app.getLocalization());
 	}
 
 	/**
@@ -1052,7 +1052,7 @@ public class Kernel {
 //App.printStacktrace(x+"");
 		String ret = formatRaw(x, tpl);
 
-		if (App.unicodeZero != '0') {
+		if (Localization.unicodeZero != '0') {
 			ret = internationalizeDigits(ret, tpl);
 		}
 
@@ -1064,7 +1064,7 @@ public class Kernel {
 	 */
 	public String internationalizeDigits(String num, StringTemplate tpl) {
 
-		if (!tpl.internationalizeDigits() || !app.isUsingLocalizedDigits()) {
+		if (!tpl.internationalizeDigits() || !getLocalization().isUsingLocalizedDigits()) {
 			return num;
 		}
 
@@ -1079,7 +1079,7 @@ public class Kernel {
 		int start = 0;
 
 		// make sure minus sign works in Arabic
-		boolean RTL = getApplication().isRightToLeftDigits(tpl);
+		boolean RTL = getLocalization().isRightToLeftDigits(tpl);
 
 		if (RTL) {
 			formatSB.append(Unicode.RightToLeftMark);
@@ -1093,11 +1093,11 @@ public class Kernel {
 
 			char c = RTL ? num.charAt(num.length() -(negative?0:1) - i) : num.charAt(i);
 			if (c == '.') {
-				c = App.unicodeDecimalPoint;
+				c = Localization.unicodeDecimalPoint;
 			} else if ((c >= '0') && (c <= '9')) {
 
 				// convert to eg Arabic Numeral
-				c += App.unicodeZero - '0'; 
+				c += Localization.unicodeZero - '0'; 
 			}
 
 			formatSB.append(c);
@@ -1119,7 +1119,7 @@ public class Kernel {
 	 */
 	final public String formatPiE(double x, NumberFormatAdapter numF,
 			StringTemplate tpl) {
-		if (App.unicodeZero != '0') {
+		if (Localization.unicodeZero != '0') {
 
 			String num = formatPiERaw(x, numF, tpl);
 
@@ -1806,7 +1806,7 @@ public class Kernel {
 			}
 
 			if (getAngleUnit() == ANGLE_DEGREE) {
-				boolean rtl = getApplication().isRightToLeftDigits(tpl);
+				boolean rtl = getLocalization().isRightToLeftDigits(tpl);
 				if (rtl) {
 					sbFormatAngle.append(Unicode.degreeChar);
 				}
@@ -2590,7 +2590,7 @@ public class Kernel {
 			return GeoClass.VECTOR;
 
 		default:
-			throw new MyError(cons.getApplication(),
+			throw new MyError(cons.getApplication().getLocalization(),
 					"Kernel: GeoElement of type " + type
 							+ " could not be created.");
 		}
@@ -3048,7 +3048,6 @@ public class Kernel {
 
 				// "attach" views again
 				viewCnt = oldViewCnt;
-
 				// add all geos to all views
 				for (int i = 0; i < viewCnt; ++i) {
 					notifyAddAll(views[i]);
@@ -3056,7 +3055,6 @@ public class Kernel {
 
 				notifyEuclidianViewCE();
 				notifyReset();
-				
 				//algebra settings need to be applied after remaking tree
 				if (app.getGuiManager()!=null)
 					app.getGuiManager().applyAlgebraViewSettings();
@@ -3432,6 +3430,7 @@ public class Kernel {
 
 	public void redo() {
 		if (undoActive) {
+			app.startCollectingRepaints();
 			storeSelectedGeosNames();
 			app.storeViewCreators();
 			notifyReset();
@@ -3440,11 +3439,13 @@ public class Kernel {
 			notifyReset();
 			app.recallViewCreators();
 			recallSelectedGeosNames();
+			app.stopCollectingRepaints();
 		}
 	}
 
 	public void undo() {
 		if (undoActive) {
+			app.startCollectingRepaints();
 			storeSelectedGeosNames();
 			app.storeViewCreators();
 			notifyReset();
@@ -3460,6 +3461,7 @@ public class Kernel {
 			if (!undoPossible()) {
 				notifyRepaint();
 			}
+			app.stopCollectingRepaints();
 		}
 	}
 
@@ -3593,6 +3595,10 @@ public class Kernel {
 			return null;
 		}
 	}
+	
+	public Localization getLocalization(){
+		return getApplication().getLocalization();
+	}
 
 	/**
 	 * Returns the kernel settings in XML format.
@@ -3656,10 +3662,10 @@ public class Kernel {
 		if (asPreference) {
 			sb.append("\t<localization");
 			sb.append(" digits=\"");
-			sb.append(getApplication().isUsingLocalizedDigits());
+			sb.append(getLocalization().isUsingLocalizedDigits());
 			sb.append("\"");
 			sb.append(" labels=\"");
-			sb.append(getApplication().isUsingLocalizedLabels());
+			sb.append(getLocalization().isUsingLocalizedLabels());
 			sb.append("\"");
 			sb.append("/>\n");
 
@@ -3854,8 +3860,8 @@ public class Kernel {
 		case 'f': // function
 			if (type.equals("function")) {
 				return new GeoFunction(cons1);
-			} else if (type.equals("functionconditional")) {
-				return new GeoFunctionConditional(cons1);
+			} else if (type.equals("functionconditional")) { //had special class fror v <5.0
+				return new GeoFunction(cons1);
 			} else {
 				return new GeoFunctionNVar(cons1);
 			}
@@ -3912,7 +3918,7 @@ public class Kernel {
 			return new GeoVector(cons1);
 
 		default:
-			throw new MyError(cons1.getApplication(),
+			throw new MyError(cons1.getApplication().getLocalization(),
 					"Kernel: GeoElement of type " + type
 							+ " could not be created.");
 		}
@@ -4467,5 +4473,13 @@ public class Kernel {
 	 */
 	public boolean getForceUpdatingBoundingBox() {
 		return forceUpdatingBoundingBox && app.isHTML5Applet();
+	}
+
+	public boolean useCASforDerivatives() {
+		return false;
+	}
+	
+	public boolean useCASforIntegrals() {
+		return !app.isHTML5Applet();
 	}
 }

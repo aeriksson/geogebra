@@ -3,13 +3,11 @@ package geogebra.web.main;
 import geogebra.common.GeoGebraConstants;
 import geogebra.common.awt.GBufferedImage;
 import geogebra.common.awt.GFont;
-import geogebra.common.euclidian.DrawEquationInterface;
 import geogebra.common.euclidian.EuclidianController;
 import geogebra.common.euclidian.EuclidianView;
 import geogebra.common.euclidian.EuclidianViewInterfaceCommon;
 import geogebra.common.factories.CASFactory;
 import geogebra.common.factories.Factory;
-import geogebra.common.factories.SwingFactory;
 import geogebra.common.gui.menubar.MenuInterface;
 import geogebra.common.gui.view.algebra.AlgebraView;
 import geogebra.common.javax.swing.GOptionPane;
@@ -17,7 +15,6 @@ import geogebra.common.kernel.AnimationManager;
 import geogebra.common.kernel.Construction;
 import geogebra.common.kernel.Kernel;
 import geogebra.common.kernel.UndoManager;
-import geogebra.common.kernel.arithmetic.ExpressionNodeConstants.StringType;
 import geogebra.common.kernel.geos.GeoElement;
 import geogebra.common.kernel.geos.GeoElementGraphicsAdapter;
 import geogebra.common.kernel.geos.GeoImage;
@@ -25,19 +22,16 @@ import geogebra.common.kernel.geos.GeoPoint;
 import geogebra.common.main.App;
 import geogebra.common.main.FontManager;
 import geogebra.common.main.GeoElementSelectionListener;
+import geogebra.common.main.Localization;
 import geogebra.common.main.MyError;
 import geogebra.common.main.SpreadsheetTableModel;
 import geogebra.common.main.settings.Settings;
 import geogebra.common.plugin.ScriptManager;
 import geogebra.common.plugin.jython.PythonBridge;
-import geogebra.common.sound.SoundManager;
 import geogebra.common.util.AbstractImageManager;
 import geogebra.common.util.GeoGebraLogger.LogDestination;
 import geogebra.common.util.Language;
 import geogebra.common.util.MD5EncrypterGWTImpl;
-import geogebra.common.util.NormalizerMinimal;
-import geogebra.common.util.StringUtil;
-import geogebra.common.util.Unicode;
 import geogebra.web.css.GuiResources;
 import geogebra.web.euclidian.EuclidianControllerW;
 import geogebra.web.euclidian.EuclidianViewW;
@@ -46,6 +40,7 @@ import geogebra.web.gui.app.GGWCommandLine;
 import geogebra.web.gui.app.GGWMenuBar;
 import geogebra.web.gui.app.GGWToolBar;
 import geogebra.web.gui.app.GeoGebraAppFrame;
+import geogebra.web.gui.app.MySplitLayoutPanel;
 import geogebra.web.gui.applet.GeoGebraFrame;
 import geogebra.web.gui.dialog.DialogManagerW;
 import geogebra.web.gui.images.AppResources;
@@ -62,7 +57,9 @@ import geogebra.web.html5.ArticleElement;
 import geogebra.web.html5.DynamicScriptElement;
 import geogebra.web.io.ConstructionException;
 import geogebra.web.io.MyXMLio;
+import geogebra.web.javax.swing.GCheckBoxMenuItem;
 import geogebra.web.javax.swing.GOptionPaneW;
+import geogebra.web.javax.swing.JPopupMenuW;
 import geogebra.web.kernel.AnimationManagerW;
 import geogebra.web.kernel.KernelW;
 import geogebra.web.kernel.UndoManagerW;
@@ -73,12 +70,10 @@ import geogebra.web.util.MyDictionary;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.MissingResourceException;
-import java.util.Set;
 
 import com.google.gwt.canvas.client.Canvas;
 import com.google.gwt.canvas.dom.client.Context2d;
@@ -103,40 +98,13 @@ import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.FlowPanel;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.MenuBar;
-import com.google.gwt.user.client.ui.MenuItem;
 import com.google.gwt.user.client.ui.PopupPanel;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.VerticalPanel;
 
-public class AppW extends App {
+public class AppW extends AppWeb {
 
-	/**
-	 * Constants related to internationalization
-	 * 
-	 */
-	public final static String DEFAULT_LANGUAGE = "en";
-	public final static String DEFAULT_LOCALE = "default";
-	public final static String A_DOT = ".";
-	public final static String AN_UNDERSCORE = "_";
-
-	/*
-	 * The representation of no_NO_NY (Norwegian Nynorsk) is illegal in a BCP47
-	 * language tag: it should actually use "nn" (Norwegian Nynorsk) for the
-	 * language field
-	 * 
-	 * @Ref:
-	 * https://sites.google.com/site/openjdklocale/design-specification#TOC
-	 * -Norwegian
-	 */
-	public final static String LANGUAGE_NORWEGIAN_NYNORSK = "no_NO_NY"; // Nynorsk
-																		// Norwegian
-																		// language
-																		// Java
-																		// Locale
-	public final static String LANGUAGE_NORWEGIAN_NYNORSK_BCP47 = "nn"; // Nynorsk
-																		// Norwegian
-																		// language
-																		// BCP47
+	
 
 	public final static String syntaxStr = "_Syntax";
 
@@ -150,6 +118,7 @@ public class AppW extends App {
 
 	protected ImageManager imageManager;
 
+	private MySplitLayoutPanel mySplitLayoutPanel = null;
 	private EuclidianDockPanelW euclidianViewPanel;
 	private Canvas canvas;
 	private geogebra.common.plugin.GgbAPI ggbapi;
@@ -159,6 +128,8 @@ public class AppW extends App {
 	private ArticleElement articleElement;
 	private GeoGebraFrame frame;
 	private GeoGebraAppFrame appFrame;
+	
+	private final LocalizationW loc;
 
 	private String ORIGINAL_BODY_CLASSNAME = "";
 
@@ -184,6 +155,7 @@ public class AppW extends App {
 	public AppW(ArticleElement ae, GeoGebraFrame gf, final boolean undoActive) {
 		this.articleElement = ae;
 		this.frame = gf;
+		this.loc = new LocalizationW();
 		setDataParamHeight(frame.getDataParamHeight());
 		setDataParamWidth(frame.getDataParamWidth());
 		this.useFullGui = ae.getDataParamGui();
@@ -194,7 +166,7 @@ public class AppW extends App {
 			GeoGebraLogger.initConsole();
 		}
 		infobar = new InfoBarW(this);
-		
+
 		info("GeoGebra " + GeoGebraConstants.VERSION_STRING + " "
 		        + GeoGebraConstants.BUILD_DATE + " "
 		        + Window.Navigator.getUserAgent());
@@ -202,10 +174,14 @@ public class AppW extends App {
 
 		euclidianViewPanel = new EuclidianDockPanelW(false);
 		this.canvas = euclidianViewPanel.getCanvas();
+		/*mySplitLayoutPanel = new MySplitLayoutPanel(false, false, false, false, false);
+		this.euclidianViewPanel = mySplitLayoutPanel.getGGWGraphicsView().getEuclidianView1Wrapper();
+		this.canvas = this.euclidianViewPanel.getCanvas();*/
 		canvas.setWidth("1px");
 		canvas.setHeight("1px");
 		canvas.setCoordinateSpaceHeight(1);
 		canvas.setCoordinateSpaceWidth(1);
+
 		initing = true;
 		initCoreObjects(undoActive, this);
 	}
@@ -217,10 +193,10 @@ public class AppW extends App {
 
 			getSettings().getEuclidian(1).setPreferredSize(
 			        geogebra.common.factories.AwtFactory.prototype.newDimension(
-			                appCanvasWidth, appCanvasHeight));
-			getEuclidianView1().setDisableRepaint(false);
+			                appCanvasWidth, appCanvasHeight));			
 			getEuclidianView1().synCanvasSize();
 			getEuclidianView1().doRepaint2();
+			stopCollectingRepaints();
 			appFrame.finishAsyncLoading(articleElement, appFrame, this);
 		} else if (frame != null) {
 			GeoGebraFrame.finishAsyncLoading(articleElement, frame, this);
@@ -233,6 +209,7 @@ public class AppW extends App {
 	        boolean undoActive) {
 		this.articleElement = article;
 		this.appFrame = geoGebraAppFrame;
+		this.loc = new LocalizationW();
 		createAppSplash();
 		App.useFullAppGui = true;
 		appCanvasHeight = appFrame.getCanvasCountedHeight();
@@ -337,7 +314,7 @@ public class AppW extends App {
 
 			if (lCookieValue == null
 			        && currentLanguage != closestlangcodetoGeoIP
-			        && !AppW.DEFAULT_LANGUAGE.equals(currentLanguage)) {
+			        && !LocalizationW.DEFAULT_LANGUAGE.equals(currentLanguage)) {
 
 				App.debug("Changing Language depending on GeoIP!");
 
@@ -626,29 +603,7 @@ public class AppW extends App {
 		setDefaultCursor();
 	}
 
-	@Override
-	public String getCommand(String key) {
-
-		if (key == null) {
-			return "";
-		}
-		
-		if (language == null) {
-			// keys not loaded yet
-			return key;
-		}
-
-
-		String ret = getPropertyNative(language, crossReferencingPropertiesKeys(key), "command");
-		
-		if (ret == null || "".equals(ret)) {
-			App.debug("command key not found: "+key);
-			return key;
-		}
-		
-		return ret;
-
-}
+	
 
 	/**
 	 * This method checks if the command is stored in the command properties
@@ -662,7 +617,7 @@ public class AppW extends App {
 	@Override
 	final public String getReverseCommand(String command) {
 
-		if (language == null) {
+		if (loc.getLanguage() == null) {
 			// keys not loaded yet
 			return command;
 		}
@@ -670,147 +625,19 @@ public class AppW extends App {
 		return super.getReverseCommand(command);
 	}
 
-	/**
-	 * @author Rana This method should work for both if the getPlain and
-	 *         getPlainTooltip. In the case of getPlainTooltip, if the
-	 *         tooltipFlag is true, then getPlain is called.
-	 */
-	@Override
-	public String getPlain(String key) {
-
-		if (key == null) {
-			return "";
-		}
-		
-		if (language == null) {
-			// keys not loaded yet
-			return key;
-		}
-
-		if (language == null) {
-			// keys not loaded yet
-			return key;
-		}
-
-		String ret = getPropertyNative(language, crossReferencingPropertiesKeys(key), "plain");
-		
-		if (ret == null || "".equals(ret)) {
-			App.debug("plain key not found: "+key+" "+ret);
-			return key;
-		}
-		
-		return ret;
-	}
-
-	/**
-	 * @author Rana Cross-Referencing properties keys: from old system of
-	 *         properties keys' naming convention to new GWt compatible system
-	 *         The old naming convention used dots in the syntax of keys in the
-	 *         properties files. Since dots are not allowed in syntaxes of
-	 *         methods (refer to GWT Constants and ConstantsWithLookup
-	 *         interfaces), the new naming convention uses underscore instead of
-	 *         dots. And since we are still using the old naming convention in
-	 *         passing the key, we need to cross-reference.
-	 */
-	public static String crossReferencingPropertiesKeys(String key) {
-
-		if (key == null) {
-			return "";
-		}
-
-		String aStr = null;
-		if (key.equals("X->Y")) {
-			aStr = "X_Y";
-		} else if (key.equals("Y<-X")) {
-			aStr = "Y_X";
-		} else {
-			aStr = key;
-		}
-
-		return aStr.replace(A_DOT, AN_UNDERSCORE);
-	}
+	
+	
 	
 	boolean menuKeysLoaded = false;
 
-	/**
-	 * @author Rana This method should work for both menu and menu tooltips
-	 *         items
-	 */
-	@Override
-	public String getMenu(String key) {
-
-		if (key == null) {
-			return "";
-		}
-		
-		if (language == null) {
-			// keys not loaded yet
-			return key;
-		}
-
-		String ret = getPropertyNative(language, crossReferencingPropertiesKeys(key), "menu");
-		
-		if (ret == null || "".equals(ret)) {
-			App.debug("menu key not found: "+key);
-			return key;
-		}
-		
-		return ret;
 	
-	}
 	
-	//
-	/*
-	 * eg __GGB__keysVar.en.command.Ellipse
-	 */
-	public native String getPropertyNative(String language, String key, String section) /*-{
-		
-		//if (!$wnd["__GGB__keysVar"]) {
-		//	return "languagenotloaded";
-		//}
-		
-		if ($wnd["__GGB__keysVar"][language]) {
-			// translated
-			return $wnd["__GGB__keysVar"][language][section][key];
-		} else {
-			// English (always available)
-			return $wnd["__GGB__keysVar"]["en"][section][key];
-		}
-		
-	}-*/;
+	
 
 
-	@Override
-	public String getError(String key) {
+	
 
-		if (key == null) {
-			return "";
-		}
-		
-		if (language == null) {
-			// keys not loaded yet
-			return key;
-		}
 
-		String ret = getPropertyNative(language, crossReferencingPropertiesKeys(key), "error");
-		
-		if (ret == null || "".equals(ret)) {
-			App.debug("error key not found: "+key);
-			return key;
-		}
-		
-		return ret;
-	}
-
-	/**
-	 * @author Rana Since we are not implementing at this stage a secondary
-	 *         language for tooltips The default behavior of setTooltipFlag()
-	 *         will be to set the member variable tooltipFlag to true
-	 */
-	@Override
-	public void setTooltipFlag() {
-		tooltipFlag = true;
-	}
 
 	@Override
 	public boolean isApplet() {
@@ -845,15 +672,7 @@ public class AppW extends App {
 		return false;
 	}
 
-	/**
-	 * Following Java's convention, the return string should only include the
-	 * language part of the locale. The assumption here that the "default"
-	 * locale is English.
-	 */
-	@Override
-	public String getLanguage() {		
-		return language;
-	}
+	
 
 	/**
 	 * This method is used for debugging purposes:
@@ -880,8 +699,8 @@ public class AppW extends App {
 		String localeName = LocaleInfo.getCurrentLocale().getLocaleName();
 		App.trace("Current Locale: " + localeName);
 
-		if (localeName.toLowerCase().equals(AppW.DEFAULT_LOCALE)) {
-			return AppW.DEFAULT_LANGUAGE;
+		if (localeName.toLowerCase().equals(LocalizationW.DEFAULT_LOCALE)) {
+			return LocalizationW.DEFAULT_LANGUAGE;
 		}
 		return localeName.substring(0,2);
 	}
@@ -891,13 +710,11 @@ public class AppW extends App {
 	}
 	
 	
-	// eg "en_GB", "es"
-	// remains null until we're sure keys are loaded
-	String language = "en";
+	
 
 	public void setLanguage(final String lang) {
 		
-		if (lang.equals(language)) {
+		if (lang!=null && lang.equals(loc.getLanguage())) {
 			setLabels(); 
 			return;
 		}
@@ -920,22 +737,10 @@ public class AppW extends App {
 		script.addLoadHandler(new ScriptLoadCallback() {
 			
 			public void onLoad() {
-				if (lang == null || "".equals(lang)) {
-					language = "en";
-				} else {
-					language = lang;
-				}
-				
 				// force reload
 				commandDictionary = null;
-
-				setCommandChanged(true);
 				
-				App.debug("keys loaded for language: "+lang);
-				App.debug("TODO: reinitialize GUI on language change");
-		
-				
-				updateLanguageFlags(lang);
+				loc.setLanguage(lang);
 				
 				
 				// make sure digits are updated in all numbers
@@ -1002,47 +807,16 @@ public class AppW extends App {
 		if (commandDictionary == null) {
 			try {
 				//commandDictionary = Dictionary.getDictionary("__GGB__dictionary_"+language);
-				commandDictionary = MyDictionary.getDictionary("command", language);
+				commandDictionary = MyDictionary.getDictionary("command", loc.getLanguage());
 			} catch (MissingResourceException e) {
 				//commandDictionary = Dictionary.getDictionary("__GGB__dictionary_en");
 				commandDictionary = MyDictionary.getDictionary("command", "en");
-				App.error("Missing Dictionary " + language);
+				App.error("Missing Dictionary " + loc.getLanguage());
 			}
 		}
 
 			return commandDictionary;
 
-	}
-
-	@Override
-	public String getInternalCommand(String cmd) {
-		initTranslatedCommands();
-
-		// The Dictionary class is used to get the whole set of command
-		// properties keys dynamically (during runtime)
-		// These command keys are defined in the HTML host page as a JavaScript
-		// Object named "commandKeysVaren", "commandKeysVarfr" etc
-		
-		if (getCommandDict() != null) {
-			Set<String> commandPropertyKeys = getCommandDict().keySet();
-			Iterator<String> commandKeysIterator = commandPropertyKeys
-			        .iterator();
-			while (commandKeysIterator.hasNext()) {
-				String s = crossReferencingPropertiesKeys(commandKeysIterator
-				        .next());
-				// AbstractApplication.debug("Testing: " + s);
-				// Remove keys with .Syntax, .SyntaxCAS, .Syntax3D from the
-				// investigated set of keys.
-				if (s.indexOf(syntaxStr) == -1) {
-					// insure that the lower/upper cases are taken into
-					// consideration
-					if (getCommand(s).toLowerCase().equals(cmd.toLowerCase())) {
-						return s;
-					}
-				}
-			}
-		}
-		return null;
 	}
 
 	public void showMessage(final String message) {
@@ -1059,7 +833,7 @@ public class AppW extends App {
 		// getMenu("Info"));
 
 		GOptionPaneW.INSTANCE.showConfirmDialog(null, msg,
-		        getPlain("ApplicationName") + " - " + getError("Error"),
+		        getPlain("ApplicationName") + " - " + getLocalization().getError("Error"),
 		        GOptionPane.DEFAULT_OPTION, 0);
 	}
 
@@ -1095,7 +869,7 @@ public class AppW extends App {
 
 	@Override
     public EuclidianViewW getEuclidianView2() {
-		return (EuclidianViewW) null; // TODO: add euclidianview2 here later
+		return null; // TODO: add euclidianview2 here later
 	}
 
 	@Override
@@ -1145,18 +919,10 @@ public class AppW extends App {
 	}
 
 	private void initCommonObjects() {
-		geogebra.common.factories.AwtFactory.prototype = new geogebra.web.factories.AwtFactoryW();
-		geogebra.common.factories.FormatFactory.prototype = new geogebra.web.factories.FormatFactoryW();
+		initFactories();
 		geogebra.common.factories.CASFactory.setPrototype(new geogebra.web.factories.CASFactoryW());
-		geogebra.common.factories.SwingFactory.setPrototype(new geogebra.web.factories.SwingFactoryW());
 		geogebra.common.factories.UtilFactory.prototype = new geogebra.web.factories.UtilFactoryW();
 		geogebra.common.factories.Factory.setPrototype(new geogebra.web.factories.FactoryW());
-		geogebra.common.util.StringUtil.prototype = new geogebra.common.util.StringUtil();
-
-		geogebra.common.euclidian.HatchingHandler.prototype = new geogebra.web.euclidian.HatchingHandlerW();
-		geogebra.common.euclidian.EuclidianStatic.prototype = new geogebra.web.euclidian.EuclidianStaticW();
-		geogebra.common.euclidian.clipping.DoubleArrayFactory.prototype = new geogebra.common.euclidian.clipping.DoubleArrayFactoryImpl();
-
 		// App.initializeSingularWS();
 
 		// neded to not overwrite anything already exists
@@ -1211,15 +977,17 @@ public class AppW extends App {
 	}
 
 	public void beforeLoadFile() {
-		getEuclidianView1().setDisableRepaint(true);
+		startCollectingRepaints();
 		getEuclidianView1().setReIniting(true);
 	}
 
 	public void afterLoadFile() {
 		kernel.initUndoInfo();
-		getEuclidianView1().setDisableRepaint(false);
+		
 		getEuclidianView1().synCanvasSize();
 		getEuclidianView1().doRepaint2();
+		stopCollectingRepaints();
+		
 		frame.splash.canNowHide();
 		getEuclidianView1().requestFocusInWindow();
 
@@ -1234,12 +1002,11 @@ public class AppW extends App {
 	 * as it needed to be fixed after all.
 	 */
 	public void afterLoadAppFile() {
-		kernel.initUndoInfo();
-		getEuclidianView1().setDisableRepaint(false);
+		kernel.initUndoInfo();		
 		getEuclidianView1().synCanvasSize();
 		splashDialog.canNowHide();
 		getEuclidianView1().doRepaint2();
-
+		stopCollectingRepaints();
 		// Well, it may cause freeze if we attach this too early
 		attachViews();
 	}
@@ -1382,70 +1149,7 @@ public class AppW extends App {
 		return imageManager;
 	}
 
-	@Override
-	public String reverseGetColor(String locColor) {
-		String str = StringUtil.removeSpaces(StringUtil.toLowerCase(locColor));
-
-		try {
-
-			//Dictionary colorKeysDict = Dictionary.getDictionary("__GGB__colors_"+language);
-			MyDictionary colorKeysDict = MyDictionary.getDictionary("colors", language);
-			Iterator<String> colorKeysIterator = colorKeysDict.keySet()
-			        .iterator();
-			while (colorKeysIterator != null && colorKeysIterator.hasNext()) {
-				String key = colorKeysIterator.next();
-				if (key != null
-				        && str.equals(StringUtil.removeSpaces(StringUtil
-				                .toLowerCase(this.getColor(key))))) {
-					return key;
-				}
-			}
-
-			return str;
-		} catch (MissingResourceException e) {
-			return str;
-		}
-	}
-
-	@Override
-	public String getColor(String key) {
-
-		if (key == null) {
-			return "";
-		}
-
-		if ((key.length() == 5)
-		        && StringUtil.toLowerCase(key).startsWith("gray")) {
-			switch (key.charAt(4)) {
-			case '0':
-				return getColor("white");
-			case '1':
-				return getPlain("AGray", Unicode.fraction1_8);
-			case '2':
-				return getPlain("AGray", Unicode.fraction1_4); // silver
-			case '3':
-				return getPlain("AGray", Unicode.fraction3_8);
-			case '4':
-				return getPlain("AGray", Unicode.fraction1_2);
-			case '5':
-				return getPlain("AGray", Unicode.fraction5_8);
-			case '6':
-				return getPlain("AGray", Unicode.fraction3_4);
-			case '7':
-				return getPlain("AGray", Unicode.fraction7_8);
-			default:
-				return getColor("black");
-			}
-		}
-
-		return key;
-
-	}
-
-	@Override
-	protected String getSyntaxString() {
-		return syntaxStr;
-	}
+	
 
 	@Override
 	public void showError(MyError e) {
@@ -1496,22 +1200,12 @@ public class AppW extends App {
 
 	@Override
 	public void showError(String key, String error) {
-		showErrorDialog(getError(key) + ":\n" + error);
+		showErrorDialog(getLocalization().getError(key) + ":\n" + error);
 	}
-
-	DrawEquationWeb drawEquation;
+	
 	private GuiManagerW guiManager;
-	private boolean commandChanged = true;
+	
 	private SoundManagerW soundManager;
-
-	@Override
-	public DrawEquationInterface getDrawEquation() {
-		if (drawEquation == null) {
-			drawEquation = new DrawEquationWeb(this);
-		}
-
-		return drawEquation;
-	}
 
 	@Override
 	public void setShowConstructionProtocolNavigation(boolean show,
@@ -1580,7 +1274,7 @@ public class AppW extends App {
 		}
 
 		if (hasEuclidianView2()
-		        && ((EuclidianViewW) getEuclidianView2()).hasStyleBar()) {
+		        && getEuclidianView2().hasStyleBar()) {
 			getEuclidianView2().getStyleBar().updateStyleBar();
 		}
 	}
@@ -1613,52 +1307,14 @@ public class AppW extends App {
 		return ggbapi;
 	}
 
-	@Override
-	public SoundManager getSoundManager() {
-		if (soundManager == null) {
-			soundManager = new SoundManagerW(this);
-		}
-		return soundManager;
-	}
 
-	@Override
-	protected boolean isCommandChanged() {
-		return commandChanged;
-	}
-
-	@Override
-	protected void setCommandChanged(boolean b) {
-		commandChanged = b;
-	}
-
-	@Override
-	protected boolean isCommandNull() {
-		return false;
-	}
-
-	@Override
-	public void initCommand() {
-		//
-	}
 	
 	private void initCommandConstants() {
 		//
 	}
 
 
-	@Override
-	public void initScriptingBundle() {
-		App.debug("initScriptingBundle: implementation needed"); // TODO
-																 // Auto-generated
-
-	}
-
-	@Override
-	public String getScriptingCommand(String internal) {
-		App.debug("getScriptingCommand: implementation needed really"); // TODO
-																		// Auto-generated
-		return null;
-	}
+	
 
 	@Override
 	protected EuclidianView newEuclidianView(boolean[] showAxes,
@@ -1681,19 +1337,7 @@ public class AppW extends App {
 		return false;
 	}
 
-	private GlobalKeyDispatcherW globalKeyDispatcher;
 
-	@Override
-	final public GlobalKeyDispatcherW getGlobalKeyDispatcher() {
-		if (globalKeyDispatcher == null) {
-			globalKeyDispatcher = newGlobalKeyDispatcher();
-		}
-		return globalKeyDispatcher;
-	}
-
-	protected GlobalKeyDispatcherW newGlobalKeyDispatcher() {
-		return new GlobalKeyDispatcherW(this);
-	}
 
 	@Override
 	public SpreadsheetTableModel getSpreadsheetTableModel() {
@@ -1778,19 +1422,7 @@ public class AppW extends App {
 
 	}
 
-	@Override
-	public String getTooltipLanguageString() {
-
-		String localeName = LocaleInfo.getCurrentLocale().getLocaleName();
-		if (localeName != null && !"".equals(localeName)) {
-			if (localeName.equals(LANGUAGE_NORWEGIAN_NYNORSK_BCP47)) {
-				return LANGUAGE_NORWEGIAN_NYNORSK;
-			}
-			return localeName;
-		}
-		return DEFAULT_LANGUAGE;
-
-	}
+	
 
 	@Override
 	protected void getWindowLayoutXML(StringBuilder sb, boolean asPreference) {
@@ -1907,51 +1539,11 @@ public class AppW extends App {
 		return null;
 	}
 
-	@Override
-	public String getPlainTooltip(String key) {
 
-		if (tooltipFlag) {
-			return getPlain(key);
-		}
 
-		return null;
-	}
+	
 
-	@Override
-	final public String getSymbol(int key) {
-
-		if (language == null) {
-			// keys not loaded yet
-			return null;
-		}
-
-		String ret = getPropertyNative(language, "S_"+key, "symbols");
-		
-		if (ret == null || "".equals(ret)) {
-			App.debug("menu key not found: "+key);
-			return null;
-		}
-		
-		return ret;
-	}
-
-	@Override
-	final public String getSymbolTooltip(int key) {
-
-		if (language == null) {
-			// keys not loaded yet
-			return null;
-		}
-
-		String ret = getPropertyNative(language, "T_"+key, "symbols");
-		
-		if (ret == null || "".equals(ret)) {
-			App.debug("menu key not found: "+key);
-			return null;
-		}
-		
-		return ret;
-	}
+	
 
 	/**
 	 * Clear selection
@@ -1977,13 +1569,14 @@ public class AppW extends App {
 		if (showMenuBar){
 			attachMenubar();
 		}
-		
+
 		if (showToolBar) {
 			attachToolbar();
 		}
-		
+
 		//return euclidianViewPanel;
 		frame.add(euclidianViewPanel);
+		//attachSplitLayoutPanel();
 
 		if (showAlgebraInput){
 			attachAlgebraInput();
@@ -2006,6 +1599,11 @@ public class AppW extends App {
 		GGWToolBar toolbar = new GGWToolBar();
 		toolbar.init(this);
 		frame.add(toolbar);
+	}
+
+	public void attachSplitLayoutPanel() {
+		mySplitLayoutPanel.attachApp(this);
+		frame.add(mySplitLayoutPanel);
 	}
 
 	public void showLoadingAnimation(boolean go) {
@@ -2088,10 +1686,6 @@ public class AppW extends App {
 		return false;
 	}
 
-	@Override
-	public StringType getFormulaRenderingType() {
-		return StringType.LATEX;
-	}
 
 	public static native void console(JavaScriptObject dataAsJSO) /*-{
 		@geogebra.common.main.App::debug(Ljava/lang/String;)(dataAsJSO);
@@ -2252,9 +1846,9 @@ public class AppW extends App {
 		appCanvasHeight = height;
 		appCanvasWidth = width;
 
-		getEuclidianView1().setDisableRepaint(false);
 		getEuclidianView1().synCanvasSize();
 		getEuclidianView1().doRepaint2();
+		stopCollectingRepaints();
 		((EuclidianControllerW) getActiveEuclidianView()
 		        .getEuclidianController()).updateOffsets();
 	}
@@ -2288,15 +1882,6 @@ public class AppW extends App {
 		App.debug("setShowInputHelpPanel: Implementation needed...");
 	}
 
-	public String getCommandSyntaxCAS(String key) {
-		String command = getCommand(key);
-		String syntax = getCommand(key + syntaxCAS);
-
-		syntax = syntax.replace("[", command + '[');
-
-		return syntax;
-	}
-
 	@Override
 	public void fileNew() {
 
@@ -2309,7 +1894,7 @@ public class AppW extends App {
 
 		// clear input bar
 		if (isUsingFullGui() && showAlgebraInput()) {
-			AlgebraInputW ai = (AlgebraInputW) (getGuiManager()
+			AlgebraInputW ai = (getGuiManager()
 			        .getAlgebraInput());
 			ai.clear();
 		}
@@ -2399,19 +1984,26 @@ public class AppW extends App {
 		App.debug("unimplemented");
 	}
 
-	@Override
-    public void addMenuItem(MenuInterface parentMenu, String filename,
+	public void addMenuItem(JPopupMenuW wrappedPopup, String filename,
 	        String name, boolean asHtml, MenuInterface subMenu) {
+		addMenuItem(wrappedPopup.getPopupMenu(), filename, name, asHtml, subMenu);
+	}
 
+	@Override
+	public void addMenuItem(MenuInterface parentMenu, String filename,
+	        String name, boolean asHtml, MenuInterface subMenu) {
+		addMenuItem((MenuBar)parentMenu, filename, name, asHtml, subMenu);
+	}
+	
+    public void addMenuItem(MenuBar parentMenu, String filename,
+	        String name, boolean asHtml, MenuInterface subMenu) {
 		String funcName = filename.substring(0, filename.lastIndexOf('.'));
 		ImageResource imgRes = (ImageResource) (AppResources.INSTANCE
 		        .getResource(funcName));
 		String iconString = imgRes.getSafeUri().asString();
-
-		((MenuBar) parentMenu).addItem(
-		        GeoGebraMenubarW.getMenuBarHtml(iconString, name), true,
-		        (MenuBar) subMenu);
-
+		
+		parentMenu.addItem(GeoGebraMenubarW.getMenuBarHtml(iconString, name),
+		        true, (MenuBar) subMenu);
 	}
 
 	@Override
@@ -2419,27 +2011,22 @@ public class AppW extends App {
 		return super.getVersionString() + "-HTML5";
 	}
 
-	private NormalizerMinimal normalizerMinimal;
+	
 	private MyXMLio xmlio;
 
-	@Override
-	public NormalizerMinimal getNormalizer() {
-		if (normalizerMinimal == null) {
-			normalizerMinimal = new NormalizerMinimal();
-		}
 
-		return normalizerMinimal;
+	public void setShowAxesSelected(GCheckBoxMenuItem mi) {
+//		GeoGebraMenubarW.setMenuSelected(mi, getGuiManager()
+//		        .getActiveEuclidianView().getShowXaxis()
+//		        && (getGuiManager().getActiveEuclidianView().getShowYaxis()));
+		mi.setSelected(getGuiManager().getActiveEuclidianView().getShowXaxis()
+				&& (getGuiManager().getActiveEuclidianView().getShowYaxis()));
 	}
 
-	public void setShowAxesSelected(MenuItem mi) {
-		GeoGebraMenubarW.setMenuSelected(mi, getGuiManager()
-		        .getActiveEuclidianView().getShowXaxis()
-		        && (getGuiManager().getActiveEuclidianView().getShowYaxis()));
-	}
-
-	public void setShowGridSelected(MenuItem mi) {
-		GeoGebraMenubarW.setMenuSelected(mi, getGuiManager()
-		        .getActiveEuclidianView().getShowGrid());
+	public void setShowGridSelected(GCheckBoxMenuItem mi) {
+//		GeoGebraMenubarW.setMenuSelected(mi, getGuiManager()
+//		        .getActiveEuclidianView().getShowGrid());
+		mi.setSelected(getGuiManager().getActiveEuclidianView().getShowGrid());
 	}
 
 	@Override
@@ -2448,7 +2035,7 @@ public class AppW extends App {
 	}
 
 	public String getEnglishCommand(String pageName) {
-		initCommand();
+		loc.initCommand();
 		//String ret = commandConstants
 		//        .getString(crossReferencingPropertiesKeys(pageName));
 		//if (ret != null)
@@ -2467,10 +2054,7 @@ public class AppW extends App {
 	    return CASFactory.getPrototype();
     }
 
-	@Override
-    public SwingFactory getSwingFactory() {
-	    return SwingFactory.getPrototype();
-    }
+
 
 	@Override
     public Factory getFactory() {
@@ -2540,10 +2124,20 @@ public class AppW extends App {
     	});
     }
     
+    @Override
+    public void createNewWindow(){
+    	//TODO implement it ?
+    }
+    
 	public native String getNativeEmailSet() /*-{
 		if($wnd.GGW_appengine){
 			return $wnd.GGW_appengine.USER_EMAIL;
 		}
 		else return "";
 	}-*/;
+
+	@Override
+    public Localization getLocalization() {
+	    return loc;
+    }
 }

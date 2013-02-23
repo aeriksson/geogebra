@@ -86,6 +86,18 @@ public class AlgoIntegral extends AlgoCasBase {
 		 if (f instanceof GeoFunction) {
 			 Function inFun = ((GeoFunction)f).getFunction();
 			 
+				if (!kernel.useCASforIntegrals()) {
+					
+					inFun = inFun.getIntegralNoCAS();
+					
+					if (inFun == null) {
+						((GeoFunction)g).setDefined(false);
+					}
+					
+					((GeoFunction)g).setFunction(inFun);
+					((GeoFunction)g).setDefined(true);
+					return;
+				}
 			 // check if it's a polynomial
 			 PolyFunction polyDeriv = inFun.getNumericPolynomialIntegral();
 			 
@@ -128,7 +140,7 @@ public class AlgoIntegral extends AlgoCasBase {
 		} else {
 			// Michael Borcherds 2008-03-30
 			// simplified to allow better Chinese translation
-			sb.append(app.getPlain("IntegralOfA", f.toGeoElement().getLabel(tpl)));
+			sb.append(loc.getPlain("IntegralOfA", f.toGeoElement().getLabel(tpl)));
 		}
 
 		if (!f.toGeoElement().isIndependent()) { // show the symbolic

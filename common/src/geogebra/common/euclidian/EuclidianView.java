@@ -13,6 +13,7 @@ import geogebra.common.awt.GLine2D;
 import geogebra.common.awt.GPoint;
 import geogebra.common.awt.GRectangle;
 import geogebra.common.awt.GRectangle2D;
+import geogebra.common.awt.GShape;
 import geogebra.common.awt.font.GTextLayout;
 import geogebra.common.euclidian.DrawableList.DrawableIterator;
 import geogebra.common.euclidian.draw.DrawAngle;
@@ -52,6 +53,7 @@ import geogebra.common.kernel.kernelND.GeoLineND;
 import geogebra.common.kernel.kernelND.GeoPlaneND;
 import geogebra.common.kernel.kernelND.GeoPointND;
 import geogebra.common.main.App;
+import geogebra.common.main.Localization;
 import geogebra.common.main.settings.AbstractSettings;
 import geogebra.common.main.settings.EuclidianSettings;
 import geogebra.common.plugin.EuclidianStyleConstants;
@@ -114,9 +116,9 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 	/** g2d of bgImage */
 	protected geogebra.common.awt.GGraphics2D bgGraphics;
 	// zoom rectangle colors
-	private static final geogebra.common.awt.GColor colZoomRectangle = geogebra.common.factories.AwtFactory.prototype
+	private static final geogebra.common.awt.GColor colZoomRectangle = AwtFactory.prototype
 			.newColor(200, 200, 230);
-	private static final geogebra.common.awt.GColor colZoomRectangleFill = geogebra.common.factories.AwtFactory.prototype
+	private static final geogebra.common.awt.GColor colZoomRectangleFill = AwtFactory.prototype
 			.newColor(200, 200, 230, 50);
 
 	// deletion square design
@@ -129,12 +131,15 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 	// colors: axes, grid, background
 	private geogebra.common.awt.GColor axesColor, gridColor;
 	private GRectangle selectionRectangle;
-	public static geogebra.common.awt.GBasicStroke defAxesStroke = geogebra.common.factories.AwtFactory.prototype
+	/**
+	 * default axes stroke
+	 */
+	public static GBasicStroke defAxesStroke = AwtFactory.prototype
 			.newBasicStroke(1.0f, geogebra.common.awt.GBasicStroke.CAP_BUTT,
 					geogebra.common.awt.GBasicStroke.JOIN_MITER);
 
 	// changed from 1.8f (same as bold grid) Michael Borcherds 2008-04-12
-	private static geogebra.common.awt.GBasicStroke boldAxesStroke = geogebra.common.factories.AwtFactory.prototype
+	private static GBasicStroke boldAxesStroke = AwtFactory.prototype
 			.newBasicStroke(2.0f,
 
 			GBasicStroke.CAP_BUTT, GBasicStroke.JOIN_MITER);
@@ -174,9 +179,10 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 
 	// end
 	private int fontSize;
-	private geogebra.common.awt.GAffineTransform coordTransform = geogebra.common.factories.AwtFactory.prototype
+	private geogebra.common.awt.GAffineTransform coordTransform = AwtFactory.prototype
 			.newAffineTransform();
 	private double[] AxesTickInterval = { 1, 1 }; // for axes =
+	/** number formats for axes */
 	protected NumberFormatAdapter[] axesNumberFormat;
 	private boolean[] showAxes = { true, true };
 
@@ -239,12 +245,23 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 
 	private boolean showAxesCornerCoords = true;// private
 
+	/**
+	 * Whether axes numbers should be shown
+	 */
 	protected boolean[] showAxesNumbers;
 
+	/**
+	 * Labels fo xAxis and yAxis
+	 */
 	protected String[] axesLabels;
 
+	/**
+	 * Styles (GFont.ITALIC, GFont.BOLD)
+	 */
 	protected int[] axesLabelsStyle;
-
+	/**
+	 * Units for axes
+	 */
 	protected String[] axesUnitLabels;
 
 	private Previewable previewDrawable;
@@ -1371,7 +1388,11 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 	}
 
 	
-	public boolean textfieldClicked(geogebra.common.awt.GPoint p){
+	/**
+	 * @param p event coords
+	 * @return whether textfield was clicked
+	 */
+	public boolean textfieldClicked(GPoint p){
 		DrawableIterator it = allDrawableList.getIterator();
 		while (it.hasNext()) {
 			Drawable d = it.next();
@@ -1390,7 +1411,7 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 	 * sets the hits of GeoElements whose visual representation is at screen
 	 * coords (x,y). order: points, vectors, lines, conics
 	 */
-	public void setHits(geogebra.common.awt.GPoint p) {
+	public void setHits(GPoint p) {
 		hits.init();
 
 		DrawableIterator it = allDrawableList.getIterator();
@@ -1562,6 +1583,10 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 		return createDrawable(geo);
 	}
 
+	/**
+	 * @param geo geo
+	 * @return new drawable for given geo
+	 */
 	public DrawableND newDrawable(GeoElement geo) {
 		return EuclidianDraw.newDrawable(this, geo);
 	}
@@ -1597,19 +1622,15 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 		setMode(mode);
 	}
 
+	/**
+	 * @param mode2 mode number
+	 */
 	public void setMode(int mode2) {
 		setMode(mode2,ModeSetter.TOOLBAR);
 		
 	}
 
 	public void repaintView() {
-		repaint();
-	}
-
-	/**
-	 * Repaints the view
-	 */
-	public void repaintEuclidianView() {
 		repaint();
 	}
 
@@ -1948,7 +1969,7 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 	 */
 	public geogebra.common.awt.GAffineTransform getCoordTransform() {
 		if (coordTransform == null)
-			coordTransform = geogebra.common.factories.AwtFactory.prototype
+			coordTransform = AwtFactory.prototype
 					.newAffineTransform();
 		return coordTransform;
 	}
@@ -2379,6 +2400,10 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 		getPreviewDrawable().updateMousePos(toRealWorldCoordX(mouseLoc.x),
 				toRealWorldCoordY(mouseLoc.y));
 	}
+	
+	public void updatePreviewableForProcessMode(){
+		getPreviewDrawable().updatePreview();
+	}
 
 	public final void mouseEntered() {
 		hasMouse = true;
@@ -2543,7 +2568,7 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 	 */
 	public abstract void paintBackground(geogebra.common.awt.GGraphics2D g2);
 
-	// reIniting is used by GeoGebraWeb
+	/** reIniting is used by GeoGebraWeb */
 	protected boolean reIniting = false;
 
 	/**
@@ -2606,7 +2631,10 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 		}
 	}
 
-	public void paintTheBackground(geogebra.common.awt.GGraphics2D g2) {
+	/**
+	 * @param g2 graphics for background
+	 */
+	public void paintTheBackground(GGraphics2D g2) {
 		// BACKGROUND
 		// draw background image (with axes and/or grid)
 		if (bgImage == null) {
@@ -2696,12 +2724,15 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 				Kernel.checkDecimalFraction(euclidianController.yRW), tpl));
 		sb.append(')');
 
-		g2.setColor(geogebra.common.awt.GColor.darkGray);
+		g2.setColor(GColor.darkGray);
 		g2.setFont(getFontCoords());
 		g2.drawString(sb.toString(), pos.x + 15, pos.y + 15);
 	}
 
-	protected void drawBackgroundWithImages(geogebra.common.awt.GGraphics2D g) {
+	/**
+	 * @param g background graphics
+	 */
+	protected void drawBackgroundWithImages(GGraphics2D g) {
 		drawBackgroundWithImages(g, false);
 	}
 
@@ -2713,7 +2744,7 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 	 * @param clear
 	 *            clear traces before drawing
 	 */
-	final protected void drawBackground(geogebra.common.awt.GGraphics2D g,
+	final protected void drawBackground(GGraphics2D g,
 			boolean clear) {
 		if (clear) {
 			clearBackground(g);
@@ -2752,9 +2783,9 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 		}
 	}
 
-	private GEllipse2DDouble circle = geogebra.common.factories.AwtFactory.prototype
+	private GEllipse2DDouble circle = AwtFactory.prototype
 			.newEllipse2DDouble(); // polar grid circles
-	private GLine2D tempLine = geogebra.common.factories.AwtFactory.prototype
+	private GLine2D tempLine = AwtFactory.prototype
 			.newLine2D();
 	private GGeneralPath gp;
 	/**
@@ -2769,7 +2800,7 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 	 * @param g2
 	 *            graphics
 	 */
-	final protected void drawGrid(geogebra.common.awt.GGraphics2D g2) {
+	final protected void drawGrid(GGraphics2D g2) {
 
 		// vars for handling positive-only axes
 		double xCrossPix = this.getxZero() + (axisCross[1] * getXscale());
@@ -2780,7 +2811,7 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 				: 0;
 
 		// set the clipping region to the region defined by the axes
-		geogebra.common.awt.GShape oldClip = g2.getClip();
+		GShape oldClip = g2.getClip();
 		if (gridType != GRID_POLAR) {
 			g2.setClip(xAxisStart, 0, getWidth(), yAxisEnd);
 		}
@@ -2958,7 +2989,7 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 	// crossing points and positive-only axes
 
 	private double getLabelLength(double rw, GFontRenderContext frc) {
-		GTextLayout layout = geogebra.common.factories.AwtFactory.prototype
+		GTextLayout layout = AwtFactory.prototype
 				.newTextLayout(
 						kernel.formatPiE(rw, axesNumberFormat[0],
 								StringTemplate.defaultTemplate)
@@ -2982,7 +3013,7 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 	 * @param g2
 	 *            graphics
 	 */
-	protected void drawAxes(geogebra.common.awt.GGraphics2D g2) {
+	protected void drawAxes(GGraphics2D g2) {
 
 		// xCrossPix: yAxis crosses the xAxis at this x pixel
 		double xCrossPix = getXAxisCrossingPixel();
@@ -3011,7 +3042,7 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 		boolean filled = (axesLineType & EuclidianStyleConstants.AXES_FILL_ARROWS) != 0;
 		
 		if (filled && gp == null) {
-			gp = geogebra.common.factories.AwtFactory.prototype.newGeneralPath();
+			gp = AwtFactory.prototype.newGeneralPath();
 		}
 
 		boolean drawRightArrow = ((axesLineType & EuclidianStyleConstants.AXES_RIGHT_ARROW) != 0)
@@ -3134,7 +3165,7 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 
 			// label of x axis
 			if (axesLabels[0] != null) {
-				GTextLayout layout = geogebra.common.factories.AwtFactory.prototype
+				GTextLayout layout = AwtFactory.prototype
 						.newTextLayout(axesLabels[0],
 								getFontLine().deriveFont(axesLabelsStyle[0]),
 								frc);
@@ -3267,7 +3298,7 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 								sb.append(axesUnitLabels[0]);
 							}
 
-							GTextLayout layout = geogebra.common.factories.AwtFactory.prototype
+							GTextLayout layout = AwtFactory.prototype
 									.newTextLayout(sb.toString(),
 											getFontAxes(), frc);
 							int x, y = (int) (yCrossPix + yoffset);
@@ -3336,7 +3367,7 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 
 			// label of y axis
 			if (axesLabels[1] != null) {
-				GTextLayout layout = geogebra.common.factories.AwtFactory.prototype
+				GTextLayout layout = AwtFactory.prototype
 						.newTextLayout(axesLabels[1],
 								getFontLine().deriveFont(axesLabelsStyle[1]),
 								frc);
@@ -3366,7 +3397,7 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 
 			double tickStep = axesStep / 2;
 
-			double maxHeight = geogebra.common.factories.AwtFactory.prototype
+			double maxHeight = AwtFactory.prototype
 					.newTextLayout("9", getFontAxes(), frc).getBounds()
 					.getHeight() * 2;
 			int unitsPerLabelY = (int) MyMath.nextPrettyNumber(maxHeight
@@ -3420,7 +3451,7 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 								sb.append(axesUnitLabels[1]);
 							}
 
-							GTextLayout layout = geogebra.common.factories.AwtFactory.prototype
+							GTextLayout layout = AwtFactory.prototype
 									.newTextLayout(sb.toString(),
 											getFontAxes(), frc);
 							int x = (int) ((xCrossPix + xoffset) - layout
@@ -3485,7 +3516,7 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 				sb.append('(');
 				sb.append(kernel.formatPiE(getXmin(), axesNumberFormat[0],
 						StringTemplate.defaultTemplate));
-				sb.append(App.unicodeComma);
+				sb.append(Localization.unicodeComma);
 				sb.append(" ");
 				sb.append(kernel.formatPiE(getYmax(), axesNumberFormat[1],
 						StringTemplate.defaultTemplate));
@@ -3500,13 +3531,13 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 				sb.append('(');
 				sb.append(kernel.formatPiE(getXmax(), axesNumberFormat[0],
 						StringTemplate.defaultTemplate));
-				sb.append(App.unicodeComma);
+				sb.append(Localization.unicodeComma);
 				sb.append(" ");
 				sb.append(kernel.formatPiE(getYmin(), axesNumberFormat[1],
 						StringTemplate.defaultTemplate));
 				sb.append(')');
 
-				GTextLayout layout = geogebra.common.factories.AwtFactory.prototype
+				GTextLayout layout = AwtFactory.prototype
 						.newTextLayout(sb.toString(), getFontAxes(), frc);
 				layout.draw(g2, (int) (getWidth() - 5 - layout.getAdvance()),
 						getHeight() - 5);
@@ -3554,7 +3585,7 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 	 * @param g
 	 *            graphics for reset icon
 	 */
-	protected abstract void drawResetIcon(geogebra.common.awt.GGraphics2D g);
+	protected abstract void drawResetIcon(GGraphics2D g);
 
 	/**
 	 * Draw textfields
@@ -3562,7 +3593,7 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 	 * @param g
 	 *            graphics
 	 */
-	protected abstract void drawActionObjects(geogebra.common.awt.GGraphics2D g);
+	protected abstract void drawActionObjects(GGraphics2D g);
 
 	/**
 	 * @param g2
@@ -3630,7 +3661,7 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 		updateBackgroundImage();
 	}
 
-	public void setGridColor(geogebra.common.awt.GColor gridColor) {
+	public void setGridColor(GColor gridColor) {
 		if (gridColor != null) {
 			this.gridColor = gridColor;
 		}
@@ -3707,7 +3738,7 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 		positiveAxes[0] = evs.getPositiveAxes()[0];
 		positiveAxes[1] = evs.getPositiveAxes()[1];
 
-		geogebra.common.awt.GDimension ps = evs.getPreferredSize();
+		GDimension ps = evs.getPreferredSize();
 		if (ps != null) {
 			setPreferredSize(ps);
 		}
@@ -3934,12 +3965,12 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 	 * @return point (width,height)
 	 */
 
-	public GPoint getMaximumLabelSize(geogebra.common.awt.GGraphics2D g2) {
+	public GPoint getMaximumLabelSize(GGraphics2D g2) {
 
 		GPoint max = new GPoint(0, 0);
 
 		g2.setFont(getFontAxes());
-		geogebra.common.awt.GFontRenderContext frc = g2.getFontRenderContext();
+		GFontRenderContext frc = g2.getFontRenderContext();
 
 		int yAxisHeight = positiveAxes[1] ? (int) getyZero() : getHeight();
 		int maxY = positiveAxes[1] ? (int) getyZero() : getHeight()
@@ -3961,7 +3992,7 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 						sb.append(axesUnitLabels[1]);
 					}
 
-					geogebra.common.awt.font.GTextLayout layout = geogebra.common.factories.AwtFactory.prototype
+					GTextLayout layout = AwtFactory.prototype
 							.newTextLayout(sb.toString(), getFontAxes(), frc);
 
 					if (max.x < layout.getAdvance()) {
@@ -4027,6 +4058,9 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 		setShowAxis(AXIS_Y, flag, true);
 	}
 
+	/**
+	 * @param bold true for bold axes
+	 */
 	public void setBoldAxes(boolean bold) {
 		axesLineType = getBoldAxes(bold, axesLineType);
 	}
@@ -4058,7 +4092,7 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 	/**
 	 * @return background graphics
 	 */
-	final public geogebra.common.awt.GGraphics2D getBackgroundGraphics() {
+	final public GGraphics2D getBackgroundGraphics() {
 		return bgGraphics;
 	}
 	
@@ -4323,7 +4357,7 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 	 *            array of y-coords
 	 */
 	public void drawPoints(GeoImage ge, double[] x, double[] y) {
-		ArrayList<geogebra.common.awt.GPoint> ptList = new ArrayList<geogebra.common.awt.GPoint>();
+		ArrayList<GPoint> ptList = new ArrayList<GPoint>();
 
 		// AbstractApplication.debug("x0" + x[0]);
 		for (int i = 0; i < x.length; i++) {
@@ -4360,7 +4394,7 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 				yi = ge.getFillImage().getHeight()
 						+ (yi - toScreenCoordY(ge.getCorner(0).y));
 			}
-			ptList.add(new geogebra.common.awt.GPoint(xi, yi));
+			ptList.add(new GPoint(xi, yi));
 		}
 		doDrawPoints(ge, ptList, GColor.black,
 				EuclidianStyleConstants.LINE_TYPE_FULL, 1);
@@ -4369,7 +4403,7 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 
 	@SuppressWarnings("javadoc")
 	protected abstract void doDrawPoints(GeoImage gi,
-			List<geogebra.common.awt.GPoint> penPoints2, GColor penColor,
+			List<GPoint> penPoints2, GColor penColor,
 			int penLineStyle, int penSize);
 
 	/**
@@ -4773,11 +4807,9 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 		boolean repaintNeeded = getEuclidianController().refreshHighlighting(
 				geos, null);
 		if (repaintNeeded) {
-			getEuclidianController().stopCollectingMinorRepaints();
 			kernel.notifyRepaint();
-		} else if (getEuclidianController().stopCollectingMinorRepaints()) {
-			repaintView();
 		}
+		getEuclidianController().stopCollectingMinorRepaints();
 	}
 
 	public void highlight(GeoElement geo) {
@@ -4801,10 +4833,8 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 				geos, null);
 		if (repaintNeeded) {
 			kernel.notifyRepaint();
-			getEuclidianController().stopCollectingMinorRepaints();
-		} else if (getEuclidianController().stopCollectingMinorRepaints()) {
-			repaintView();
-		}
+		} 
+		getEuclidianController().stopCollectingMinorRepaints();
 	}
 
 	/**
@@ -4838,14 +4868,14 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 	/**
 	 * @return axes color
 	 */
-	public geogebra.common.awt.GColor getAxesColor() {
+	public GColor getAxesColor() {
 		return axesColor;
 	}
 
 	/**
 	 * @return grid color
 	 */
-	public geogebra.common.awt.GColor getGridColor() {
+	public GColor getGridColor() {
 		return gridColor;
 	}
 
@@ -4872,11 +4902,11 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 		// init grid's line type
 		setGridLineStyle(EuclidianStyleConstants.LINE_TYPE_DASHED_SHORT);
 		setAxesLineStyle(EuclidianStyleConstants.AXES_LINE_TYPE_ARROW);
-		setAxesColor(geogebra.common.awt.GColor.black); // Michael Borcherds
+		setAxesColor(GColor.black); // Michael Borcherds
 														// 2008-01-26 was
 														// darkgray
-		setGridColor(geogebra.common.awt.GColor.lightGray);
-		setBackground(geogebra.common.awt.GColor.white);
+		setGridColor(GColor.lightGray);
+		setBackground(GColor.white);
 
 		// showAxes = true;
 		// showGrid = false;
@@ -4957,10 +4987,16 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 		this.optionPanel = optionPanel;
 	}
 
+	/**
+	 * @return delete tool rectangle
+	 */
 	public GRectangle getDeletionRectangle() {
 		return deletionRectangle;
 	}
 
+	/**
+	 * @param deletionRectangle delete tool rectangle
+	 */
 	public void setDeletionRectangle(GRectangle deletionRectangle) {
 		this.deletionRectangle = deletionRectangle;
 	}
@@ -4968,7 +5004,7 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 	/**
 	 * changes style bold <> not bold as necessary
 	 * 
-	 * @param bold
+	 * @param bold true for bold axes
 	 * @param axesLineStyle
 	 *            old style
 	 * @return new style
@@ -4977,10 +5013,8 @@ public abstract class EuclidianView implements EuclidianViewInterfaceCommon {
 
 		if (bold) {
 			return axesLineStyle | EuclidianStyleConstants.AXES_BOLD;
-		} else {
-			return axesLineStyle & (~EuclidianStyleConstants.AXES_BOLD);
-
 		}
+		return axesLineStyle & (~EuclidianStyleConstants.AXES_BOLD);
 	}
 
 	/**

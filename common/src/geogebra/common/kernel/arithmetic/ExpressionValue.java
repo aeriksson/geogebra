@@ -169,5 +169,7 @@ public interface ExpressionValue {
 	 * @return whether x(this) makes sense
 	 */
 	public boolean hasCoords();
+	public ExpressionValue derivative(FunctionVariable fv);
+	ExpressionValue integral(FunctionVariable fv);
 }
 

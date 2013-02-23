@@ -134,7 +134,7 @@ public class TextInputDialog extends InputDialogD implements DocumentListener, g
 	public TextInputDialog(App app2, String title, GeoText editGeo,
 			GeoPointND startPoint, int cols, int rows, boolean isTextMode) {
 
-		super(((AppD)app2).getFrame(), false);
+		super(((AppD)app2).getFrame(), false,app2.getLocalization());
 		this.app = (AppD)app2;
 		this.startPoint = startPoint;
 		this.isTextMode = isTextMode;
@@ -326,7 +326,7 @@ public class TextInputDialog extends InputDialogD implements DocumentListener, g
 
 		JMenu menu = new JMenu(app.getMenu("Properties.Basic"));
 		menu.add(new LatexTable(app, this, btInsertUnicode, TableSymbols
-				.basicSymbols(app), -1, 11,
+				.basicSymbols(app.getLocalization()), -1, 11,
 				geogebra.common.gui.util.SelectionTable.MODE_TEXT));
 		btInsertUnicode.addPopupMenuItem(menu);
 		// btInsertUnicode.addPopupMenuItem(createMenuItem(SymbolTable.math_ops,0,1,2));

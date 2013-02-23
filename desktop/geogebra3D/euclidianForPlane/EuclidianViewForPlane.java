@@ -343,9 +343,9 @@ public class EuclidianViewForPlane extends EuclidianViewFor3D {
 			return "";
 		
 		if (plane instanceof GeoPlaneND) {
-			return getApplication().getPlain("PlaneA",((GeoElement) plane).getLabel(StringTemplate.defaultTemplate));
+			return getApplication().getLocalization().getPlain("PlaneA",((GeoElement) plane).getLabel(StringTemplate.defaultTemplate));
 		}
-		return getApplication().getPlain("PlaneFromA",((GeoElement) plane).getLabel(StringTemplate.defaultTemplate));
+		return getApplication().getLocalization().getPlain("PlaneFromA",((GeoElement) plane).getLabel(StringTemplate.defaultTemplate));
 	}
 	
 	public GeoCoordSys2D getGeoElement(){
@@ -413,10 +413,17 @@ public class EuclidianViewForPlane extends EuclidianViewFor3D {
 	 * remove the view (when creator is removed)
 	 */
 	public void doRemove(){
+		removeFromGuiAndKernel();
+		((App3D) app).removeEuclidianViewForPlaneFromList(this);
+	}
+	
+	/**
+	 * remove panel from gui and view from kernel
+	 */
+	public void removeFromGuiAndKernel(){
 		panel.closePanel();
 		((LayoutD) app.getGuiManager().getLayout()).getDockManager().unRegisterPanel(panel);
 		kernel.detach(this);
-		((App3D) app).removeEuclidianViewForPlaneFromList(this);
 	}
 	
 	

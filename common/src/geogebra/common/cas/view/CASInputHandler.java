@@ -678,7 +678,7 @@ public class CASInputHandler {
 
 		// replace a := with Delete[a]
 		if (inputTrim.endsWith(":=")) {
-			inputTrim = casView.getApp().getCommand("Delete") + "["
+			inputTrim = casView.getApp().getLocalization().getCommand("Delete") + "["
 					+ inputTrim.substring(0, inputTrim.length() - 2).trim()
 					+ "];";
 		}
@@ -689,6 +689,21 @@ public class CASInputHandler {
 		}
 
 		return inputTrim;
+	}
+	
+	/**
+	 * @param renderer renderer of the cell
+	 */
+	public static void handleMarble(GeoCasCell cell, MarbleRenderer renderer) {
+		boolean marbleShown = cell.hasTwinGeo() && cell.getTwinGeo().isEuclidianVisible() 
+		&& cell.getTwinGeo().isEuclidianShowable();
+		if(cell.showOutput() && !cell.isError()){
+			renderer.setMarbleValue(marbleShown);
+			renderer.setMarbleVisible(true);			
+		}else{
+			renderer.setMarbleVisible(false);
+		}
+		
 	}
 
 }

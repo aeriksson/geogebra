@@ -1,7 +1,7 @@
 package geogebra.web.gui.inputfield;
 
 import geogebra.common.gui.util.TableSymbols;
-import geogebra.web.main.AppW;
+import geogebra.web.main.AppWeb;
 
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
@@ -12,10 +12,10 @@ import com.google.gwt.user.client.ui.PopupPanel;
 public class SymbolTablePopupW extends PopupPanel implements ClickHandler {
 	
 	Grid symbolTable = null;
-	private AppW app;
+	private AppWeb app;
 	private AutoCompleteTextFieldW textField;
 
-	public SymbolTablePopupW(AppW app,
+	public SymbolTablePopupW(AppWeb app,
             AutoCompleteTextFieldW autoCompleteTextField) {
 	   this.app = app;
 	   this.textField = autoCompleteTextField;
@@ -24,8 +24,8 @@ public class SymbolTablePopupW extends PopupPanel implements ClickHandler {
     }
 	
 	private void createSymbolTable() {
-		String [] icons = TableSymbols.basicSymbols(app);
-		String [] iconshelp = TableSymbols.basicSymbolsToolTips(app);
+		String [] icons = TableSymbols.basicSymbols(app.getLocalization());
+		String [] iconshelp = TableSymbols.basicSymbolsToolTips(app.getLocalization());
 		symbolTable = new Grid((int) Math.ceil(icons.length/10),10);
 		symbolTable.addStyleName("SymbolTable");
 		

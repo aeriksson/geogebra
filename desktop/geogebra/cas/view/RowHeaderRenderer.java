@@ -1,5 +1,7 @@
 package geogebra.cas.view;
 
+import geogebra.common.cas.view.CASInputHandler;
+import geogebra.common.cas.view.MarbleRenderer;
 import geogebra.common.kernel.geos.GeoCasCell;
 import geogebra.common.main.App;
 import geogebra.common.main.GeoGebraColorConstants;
@@ -22,7 +24,7 @@ import javax.swing.SwingConstants;
 /**
  * Renders row headers
  */
-public class RowHeaderRenderer extends JPanel implements ListCellRenderer {
+public class RowHeaderRenderer extends JPanel implements ListCellRenderer, MarbleRenderer {
 		
 	private static final long serialVersionUID = 1L;    	    	
 	private CASTableD casTable;	
@@ -68,13 +70,7 @@ public class RowHeaderRenderer extends JPanel implements ListCellRenderer {
 			App.warn("No cas cell"+index);
 			return this;
 		}
-		if(ctr.showOutput() && !ctr.isError()){
-			showHideControl.setIcon(ctr.hasTwinGeo() && ctr.getTwinGeo().isEuclidianVisible() 
-					&& ctr.getTwinGeo().isEuclidianShowable()?iconShown:iconHidden);
-			showHideControl.setVisible(true);
-		}else{
-			showHideControl.setVisible(false);
-		}
+		CASInputHandler.handleMarble(ctr,this);
 		
 		if (isSelected) {
 			setBackground(geogebra.awt.GColorD.getAwtColor(GeoGebraColorConstants.TABLE_SELECTED_BACKGROUND_COLOR_HEADER));
@@ -94,6 +90,15 @@ public class RowHeaderRenderer extends JPanel implements ListCellRenderer {
 		}
 			
 		return this;
+	}
+
+	public void setMarbleValue(boolean value) {
+		showHideControl.setIcon(value?iconShown:iconHidden);
+		
+	}
+
+	public void setMarbleVisible(boolean visible) {
+		showHideControl.setVisible(visible);		
 	}
 
 	

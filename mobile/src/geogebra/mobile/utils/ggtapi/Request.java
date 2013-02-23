@@ -1,7 +1,11 @@
 package geogebra.mobile.utils.ggtapi;
 
+import com.google.gwt.json.client.JSONArray;
+import com.google.gwt.json.client.JSONObject;
+import com.google.gwt.json.client.JSONString;
+
 /**
- * Request POJO
+ * For Generating a JSON String for specific GeoGebratube API Requests
  * 
  * @author Matthias Meisinger
  */
@@ -10,6 +14,16 @@ class Request
 	enum Task
 	{
 		fetch;
+	}
+
+	public enum Fields
+	{
+		id, title, type, description, timestamp, author, author_url, url, url_direct, language, thumbnail, featured, likes;
+	}
+
+	public enum Filters
+	{
+		id, title, search, type, description, timestamp, author, language, featured, likes;
 	}
 
 	public enum Order
@@ -22,20 +36,29 @@ class Request
 		asc, desc;
 	}
 
-	public enum Filters
-	{
-		id, title, search, type, description, timestamp, author, language, featured, likes;
-	}
-
 	private static final String api = "1.0.0";
+	private Task task = Task.fetch;
 
 	private Fields[] fields = Fields.values();
-	private Filters[] filters;
-	private String query = "";
-
-	private Order by;
-	private Type type;
+	private Filters[] filters = { Filters.search };
+	private Order by = Order.relevance;
+	private Type type = Type.desc;
 	private int limit = GeoGebraTubeAPI.STANDARD_RESULT_QUANTITY;
+
+	private JSONObject requestJSON = new JSONObject();
+	private JSONObject apiJSON = new JSONObject();
+	private JSONObject taskJSON = new JSONObject();
+	private JSONObject fieldsJSON = new JSONObject();
+	private JSONArray fieldJSON = new JSONArray();
+
+	private JSONObject filtersJSON = new JSONObject();
+	private JSONArray filterJSON = new JSONArray();
+
+	private JSONObject orderJSON = new JSONObject();
+	private JSONObject limitJSON = new JSONObject();
+
+	private String query;
+	private int id;
 
 	/**
 	 * Constructor for a Featured Materials Request
@@ -60,50 +83,62 @@ class Request
 	}
 
 	/**
-	 * Constructor for a Request by Filters
+	 * Constructor for a Request by ID
 	 * 
 	 * @param filters
 	 * @param by
 	 */
-	public Request(Filters[] filters, Order by, Type sort)
+	public Request(int id)
 	{
-		this.filters = filters;
-		this.by = by;
-		this.type = sort;
+		this.filters = new Filters[] { Filters.id };
+		this.id = id;
 	}
 
-	public static String getApi()
-  {
-  	return api;
-  }
+	public String toJSONString()
+	{
+		this.apiJSON.put("-api", new JSONString(Request.api));
+		this.taskJSON.put("-type", new JSONString(this.task.toString()));
 
-	public Fields[] getFields()
-  {
-  	return fields;
-  }
+		for (int i = 0; i < this.fields.length; i++)
+		{
+			JSONObject current = new JSONObject();
+			current.put("-name", new JSONString(this.fields[i].toString()));
+			this.fieldJSON.set(i, current);
+		}
+		
+		this.fieldsJSON.put("field", this.fieldJSON);
 
-	public Filters[] getFilters()
-  {
-  	return filters;
-  }
+		for (int i = 0; i < this.filters.length; i++)
+		{
+			JSONObject current = new JSONObject();
+			current.put("-name", new JSONString(this.filters[i].toString()));
 
-	public String getQuery()
-  {
-  	return query;
-  }
+			if (this.filters[i] == Filters.search)
+			{
+				current.put("#text", new JSONString(this.query));
+			}
+			else if (this.filters[i] == Filters.id)
+			{
+				current.put("#text", new JSONString(String.valueOf(this.id)));
+			}
 
-	public Order getBy()
-  {
-  	return by;
-  }
+			this.filterJSON.set(i, current);
+		}
 
-	public Type getType()
-  {
-  	return type;
-  }
+		this.filtersJSON.put("field", this.filterJSON);
 
-	public int getLimit()
-  {
-  	return limit;
-  }
+		this.orderJSON.put("-by", new JSONString(this.by.toString()));
+		this.orderJSON.put("-type", new JSONString(this.type.toString()));
+		this.limitJSON.put("-num", new JSONString(String.valueOf(this.limit)));
+
+		this.taskJSON.put("fields", this.fieldsJSON);
+		this.taskJSON.put("filters", this.filtersJSON);
+		this.taskJSON.put("order", this.orderJSON);
+		this.taskJSON.put("limit", this.limitJSON);
+
+		this.apiJSON.put("task", this.taskJSON);
+		this.requestJSON.put("request", this.apiJSON);
+
+		return this.requestJSON.toString();
+	}
 }

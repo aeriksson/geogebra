@@ -68,7 +68,7 @@ public class CASTableW extends Grid implements CASTable {
 		else
 			this.insertRow(n);
 		Widget cellWidget = new CASTableCellW(casCell);
-		Widget rowHeader = new RowHeaderWidget(n + 1);
+		Widget rowHeader = new RowHeaderWidget(n + 1,casCell);
 		setWidget(n, CASTableW.COL_CAS_HEADER, rowHeader);
 		getCellFormatter()
 		        .getElement(n, COL_CAS_HEADER)
@@ -125,7 +125,7 @@ public class CASTableW extends Grid implements CASTable {
 			resize(rowNumber + 1, 2);
 		}
 		Widget cellWidget = new CASTableCellW(casCell);
-		Widget rowHeader = new RowHeaderWidget(rowNumber + 1);
+		Widget rowHeader = new RowHeaderWidget(rowNumber + 1,casCell);
 		setWidget(rowNumber, CASTableW.COL_CAS_HEADER, rowHeader);
 		getCellFormatter()
 		        .getElement(rowNumber, COL_CAS_HEADER)
@@ -155,7 +155,11 @@ public class CASTableW extends Grid implements CASTable {
 		addSelectedRows(from, to);
 	}
 
-	public void addSelectedRows(int from, int to) {
+	public void addSelectedRows(int a, int b) {
+		int from = Math.min(a, b);
+		int to = Math.max(a, b);
+		if(from < 0)
+			return;
 		for(int i=0;i<getRowCount();i++){
 			markRowSelected(i,false);
 		}

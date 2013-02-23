@@ -2,7 +2,11 @@ package geogebra.mobile.gui.elements.header;
 
 import java.util.Iterator;
 
+import org.vectomatic.dom.svg.ui.SVGResource;
+
 import geogebra.common.main.GWTKeycodes;
+import geogebra.mobile.gui.CommonResources;
+
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
@@ -14,7 +18,6 @@ import com.google.gwt.user.client.ui.FlowPanel;
 import com.google.gwt.user.client.ui.HasText;
 import com.google.gwt.user.client.ui.HasWidgets;
 import com.google.gwt.user.client.ui.Label;
-import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Widget;
 import com.googlecode.mgwt.dom.client.event.touch.TouchCancelEvent;
@@ -28,9 +31,10 @@ import com.googlecode.mgwt.ui.client.dialog.DialogPanel;
 import com.googlecode.mgwt.ui.client.dialog.HasTitleText;
 import com.googlecode.mgwt.ui.client.dialog.PopinDialog;
 import com.googlecode.mgwt.ui.client.theme.base.DialogCss;
+import com.googlecode.mgwt.ui.client.widget.Button;
+import com.googlecode.mgwt.ui.client.widget.MListBox;
 import com.googlecode.mgwt.ui.client.widget.ProgressIndicator;
-import com.googlecode.mgwt.ui.client.widget.base.ButtonBase;
-import com.googlecode.mgwt.ui.client.widget.buttonbar.TrashButton;
+import com.googlecode.mgwt.ui.client.widget.buttonbar.ButtonBarSpacer;
 
 public class OpenSaveDialog implements HasText, HasTitleText, Dialog, HasWidgets
 {
@@ -65,36 +69,6 @@ public class OpenSaveDialog implements HasText, HasTitleText, Dialog, HasWidgets
 		public void onCancel();
 	}
 
-	/**
-	 * The Open-Button of the InputDialog.
-	 * 
-	 * @see com.googlecode.mgwt.ui.client.widget.base.ButtonBase ButtonBase
-	 */
-	private static class OKButton extends ButtonBase
-	{
-		public OKButton(DialogCss css, String text)
-		{
-			super(css);
-			setText(text);
-			addStyleName(css.okbutton());
-		}
-	}
-
-	/**
-	 * The Cancel-Button of the InputDialog.
-	 * 
-	 * @see com.googlecode.mgwt.ui.client.widget.base.ButtonBase ButtonBase
-	 */
-	private static class CancelButton extends ButtonBase
-	{
-		public CancelButton(DialogCss css, String text)
-		{
-			super(css);
-			setText(text);
-			addStyleName(css.cancelbutton());
-		}
-	}
-
 	PopinDialog popinDialog;
 	DialogPanel dialogPanel;
 	private DialogCss css;
@@ -106,7 +80,7 @@ public class OpenSaveDialog implements HasText, HasTitleText, Dialog, HasWidgets
 
 	Storage stockStore;
 	private String fileName;
-	ListBox list;
+	MListBox list;
 	TextBox textInput;
 	ProgressIndicator pIndicator;
 
@@ -173,7 +147,6 @@ public class OpenSaveDialog implements HasText, HasTitleText, Dialog, HasWidgets
 							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
-
 					}
 					else
 					{
@@ -210,7 +183,9 @@ public class OpenSaveDialog implements HasText, HasTitleText, Dialog, HasWidgets
 	 */
 	private void addFileChooser()
 	{
-		this.list = new ListBox();
+		this.list = new MListBox();
+		this.list.getElement().setAttribute("style", "height: 35px");
+		this.list.addStyleName("openSaveListBox");
 		this.list.addItem("(None)");
 
 		try
@@ -221,7 +196,6 @@ public class OpenSaveDialog implements HasText, HasTitleText, Dialog, HasWidgets
 				{
 					this.list.addItem(this.stockStore.key(i));
 				}
-				this.list.addStyleName("listBoxToOpen");
 				this.dialogPanel.getContent().add(this.list);
 
 				if (isFileSaved())
@@ -249,6 +223,7 @@ public class OpenSaveDialog implements HasText, HasTitleText, Dialog, HasWidgets
 			@Override
 			public void onChange(ChangeEvent event)
 			{
+				setFileName();
 				setText(getFileName());
 			}
 		});
@@ -265,10 +240,14 @@ public class OpenSaveDialog implements HasText, HasTitleText, Dialog, HasWidgets
 	}
 
 	/**
-	 * Adds all the buttons to the dialog. Horizontal alignment.
+	 * Adds all the buttons to the dialog. Horizontal alignment. Disables default
+	 * buttons from Daniel Kurka.
 	 */
 	private void addButtonContainer()
 	{
+		this.dialogPanel.showCancelButton(false); // don't show the default buttons
+		this.dialogPanel.showOkButton(false); // from Daniel Kurka
+
 		this.buttonContainer = new FlowPanel();
 		this.buttonContainer.addStyleName(this.css.footer());
 
@@ -304,7 +283,10 @@ public class OpenSaveDialog implements HasText, HasTitleText, Dialog, HasWidgets
 	 */
 	private void addDeleteButton()
 	{
-		TrashButton deleteButton = new TrashButton();
+		SVGResource icon = CommonResources.INSTANCE.dialog_trash();
+		Button deleteButton = new Button();
+		String html = "<img src=\"" + icon.getSafeUri().asString() + "\" style=\"height:32px; width:32px; margin:auto;\">";
+		deleteButton.getElement().setInnerHTML(html);
 
 		deleteButton.addTouchHandler(new TouchHandler()
 		{
@@ -332,7 +314,7 @@ public class OpenSaveDialog implements HasText, HasTitleText, Dialog, HasWidgets
 				// TODO Auto-generated method stub
 			}
 		});
-
+		this.buttonContainer.add(new ButtonBarSpacer());
 		this.buttonContainer.add(deleteButton);
 	}
 
@@ -341,7 +323,11 @@ public class OpenSaveDialog implements HasText, HasTitleText, Dialog, HasWidgets
 	 */
 	private void addOpenButton()
 	{
-		OKButton openButton = new OKButton(this.css, "Open");
+		SVGResource icon = CommonResources.INSTANCE.dialog_ok();
+		Button openButton = new Button();
+		String html = "<img src=\"" + icon.getSafeUri().asString() + "\" style=\"height:32px; width:32px; margin:auto;\">";
+		openButton.getElement().setInnerHTML(html);
+
 		openButton.addTouchHandler(new TouchHandler()
 		{
 
@@ -349,20 +335,21 @@ public class OpenSaveDialog implements HasText, HasTitleText, Dialog, HasWidgets
 			public void onTouchStart(TouchStartEvent event)
 			{
 				OpenSaveDialog.this.pIndicator.setVisible(true);
+				OpenSaveDialog.this.pIndicator.getElement().setAttribute("style", "margin:auto;");
 
 				OpenSaveDialog.this.setChosenFile();
 				OpenSaveDialog.this.setFileName();
 
 				OpenSaveDialog.this.dialogPanel.getContent().remove(OpenSaveDialog.this.list);
 				OpenSaveDialog.this.dialogPanel.getContent().remove(OpenSaveDialog.this.textInput);
-				OpenSaveDialog.this.buttonContainer.getWidget(2).setVisible(false);
+				OpenSaveDialog.this.buttonContainer.getWidget(3).setVisible(false); // enable
+				                                                                    // delete-button
 			}
 
 			@Override
 			public void onTouchMove(TouchMoveEvent event)
 			{
 				// TODO Auto-generated method stub
-
 			}
 
 			@Override
@@ -394,7 +381,10 @@ public class OpenSaveDialog implements HasText, HasTitleText, Dialog, HasWidgets
 	 */
 	private void addSaveButton()
 	{
-		OKButton saveButton = new OKButton(this.css, "Save");
+		SVGResource icon = CommonResources.INSTANCE.dialog_ok();
+		Button saveButton = new Button();
+		String html = "<img src=\"" + icon.getSafeUri().asString() + "\" style=\"height:32px; width:32px; margin:auto; background-color: none;\">";
+		saveButton.getElement().setInnerHTML(html);
 		saveButton.addDomHandler(new ClickHandler()
 		{
 			@Override
@@ -413,8 +403,6 @@ public class OpenSaveDialog implements HasText, HasTitleText, Dialog, HasWidgets
 			}
 		}, ClickEvent.getType());
 
-		this.dialogPanel.showOkButton(false); // don't show the default buttons from
-		// Daniel Kurka
 		this.buttonContainer.add(saveButton);
 	}
 
@@ -423,7 +411,11 @@ public class OpenSaveDialog implements HasText, HasTitleText, Dialog, HasWidgets
 	 */
 	private void addCancelButton()
 	{
-		CancelButton cancelButton = new CancelButton(this.css, "Cancel");
+		SVGResource icon = CommonResources.INSTANCE.dialog_cancel();
+		Button cancelButton = new Button();
+		String html = "<img src=\"" + icon.getSafeUri().asString() + "\" style=\"height:32px; width:32px; margin:auto;\">";
+		cancelButton.getElement().setInnerHTML(html);
+
 		cancelButton.addDomHandler(new ClickHandler()
 		{
 			@Override
@@ -435,8 +427,7 @@ public class OpenSaveDialog implements HasText, HasTitleText, Dialog, HasWidgets
 			}
 
 		}, ClickEvent.getType());
-		this.dialogPanel.showCancelButton(false); // don't show the default buttons
-		this.dialogPanel.showOkButton(false); // from Daniel Kurka
+
 		this.buttonContainer.add(cancelButton);
 	}
 

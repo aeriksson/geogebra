@@ -29,6 +29,7 @@ import geogebra.gui.util.GeoGebraFileChooser;
 import geogebra.gui.view.data.DataSourceDialog;
 import geogebra.gui.view.functioninspector.FunctionInspector;
 import geogebra.main.AppD;
+import geogebra.main.LocalizationD;
 import geogebra.main.MyResourceBundle;
 
 import java.awt.Point;
@@ -228,7 +229,7 @@ public class DialogManagerD extends geogebra.common.main.DialogManager {
 		// Michael Borcherds 2008-03-25
 		// a Chinese friendly version
 		InputDialogD id = new InputDialogD(((AppD) app), "<html>"
-				+ app.getPlain("NewNameForA", "<b>" + geo.getNameDescription()
+				+ app.getLocalization().getPlain("NewNameForA", "<b>" + geo.getNameDescription()
 						+ "</b>") + // eg New name for <b>Segment a</b>
 				"</html>", app.getPlain("Rename"), initText, false, handler,
 				false, selectInitText, null);
@@ -541,10 +542,10 @@ public class DialogManagerD extends geogebra.common.main.DialogManager {
 			// get keys to delete
 			// as Java is localized in these languages already
 			// http://openjdk.java.net/groups/i18n/
-			rbJavaUI = MyResourceBundle.loadSingleBundleFile(AppD.RB_JAVA_UI);
+			rbJavaUI = MyResourceBundle.loadSingleBundleFile(LocalizationD.RB_JAVA_UI);
 			deleteKeys = true;
 		} else {
-			rbJavaUI = MyResourceBundle.createBundle(AppD.RB_JAVA_UI,
+			rbJavaUI = MyResourceBundle.createBundle(LocalizationD.RB_JAVA_UI,
 					currentLocale);
 		}
 

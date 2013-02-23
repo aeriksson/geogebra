@@ -3,6 +3,7 @@ package geogebra.gui.layout;
 import geogebra.common.gui.layout.DockComponent;
 import geogebra.common.io.layout.DockPanelData;
 import geogebra.common.main.App;
+import geogebra.common.main.Localization;
 import geogebra.gui.GuiManagerD;
 import geogebra.gui.app.GeoGebraFrame;
 import geogebra.gui.layout.panels.EuclidianDockPanelAbstract;
@@ -72,6 +73,7 @@ public abstract class DockPanel extends JPanel implements ActionListener,
 
 	protected DockManager dockManager;
 	protected AppD app;
+	protected Localization loc;
 
 	/**
 	 * The ID of this dock panel.
@@ -403,13 +405,13 @@ public abstract class DockPanel extends JPanel implements ActionListener,
 	 * @return the focus panel
 	 */
 	protected JComponent createFocusPanel() {
-		titleLabel = new JLabel(app.getPlain(title));
+		titleLabel = new JLabel(loc.getPlain(title));
 		titleLabel.setFont(app.getPlainFont());
 		titleLabel.setForeground(Color.darkGray);
 
 		JPanel p = new JPanel(new FlowLayout(app.flowLeft(), 2, 1));
 
-		if (app.isRightToLeftReadingOrder()) {
+		if (app.getLocalization().isRightToLeftReadingOrder()) {
 			p.add(titleLabel);
 			p.add(Box.createHorizontalStrut(2));
 			if (this.hasStyleBar) {
@@ -434,14 +436,14 @@ public abstract class DockPanel extends JPanel implements ActionListener,
 	public void register(DockManager dockManager) {
 		this.dockManager = dockManager;
 		this.app = dockManager.getLayout().getApplication();
-
+		this.loc = app.getLocalization();
 		// create buttons for the panels
 		createButtons();
 
 		// create button panel
 		buttonPanel = new JPanel();
 		buttonPanel.setLayout(new FlowLayout(app.flowRight(), 0, 1));
-		if (app.isRightToLeftReadingOrder()) {
+		if (app.getLocalization().isRightToLeftReadingOrder()) {
 			buttonPanel.add(closeButton);
 			buttonPanel.add(Box.createHorizontalStrut(4));
 			buttonPanel.add(windowButton);
@@ -578,7 +580,7 @@ public abstract class DockPanel extends JPanel implements ActionListener,
 	 * @return title in plain style
 	 */
 	protected String getPlainTitle() {
-		return app.getPlain(title);
+		return loc.getPlain(title);
 	}
 
 	/**
@@ -866,15 +868,15 @@ public abstract class DockPanel extends JPanel implements ActionListener,
 	 * language was changed.
 	 */
 	public void updateLabels() {
-		closeButton.setToolTipText(app.getMenuTooltip("Close"));
-		windowButton.setToolTipText(app.getPlainTooltip("ViewOpenExtraWindow"));
-		unwindowButton.setToolTipText(app
+		closeButton.setToolTipText(loc.getMenuTooltip("Close"));
+		windowButton.setToolTipText(loc.getPlainTooltip("ViewOpenExtraWindow"));
+		unwindowButton.setToolTipText(loc
 				.getPlainTooltip("ViewCloseExtraWindow"));
-		unwindowButton2.setToolTipText(app
+		unwindowButton2.setToolTipText(loc
 				.getPlainTooltip("ViewCloseExtraWindow"));
-		toggleStyleBarButton.setToolTipText(app
+		toggleStyleBarButton.setToolTipText(loc
 				.getPlainTooltip("ToggleStyleBar"));
-		toggleStyleBarButton2.setToolTipText(app
+		toggleStyleBarButton2.setToolTipText(loc
 				.getPlainTooltip("ToggleStyleBar"));
 
 		if (frame == null) {

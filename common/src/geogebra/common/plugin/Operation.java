@@ -970,8 +970,8 @@ public enum Operation {
 		public ExpressionValue handle(ExpressionNodeEvaluator ev,
 				ExpressionValue lt, ExpressionValue rt, ExpressionValue left,
 				ExpressionValue right, StringTemplate tpl, boolean holdsLaTeX) {
-			if (lt.isVectorValue()) {
-				return ((NumberValue) rt).getNumber().psi();
+			if (lt.isNumberValue()) {
+				return ((NumberValue) lt).getNumber().psi();
 			}
 			return ev.polynomialOrDie(lt, this, "psi(");
 		}
@@ -1031,7 +1031,7 @@ public enum Operation {
 			if (lt.isNumberValue()) {
 				return ((NumberValue) lt).getNumber().cosineIntegral();
 			}
-			return ev.polynomialOrDie(lt, this, "cosineIntegral(");
+			return ev.polynomialOrDie(lt, this, "cosIntegral(");
 
 		}
 	},
@@ -1043,7 +1043,7 @@ public enum Operation {
 			if (lt.isNumberValue()) {
 				return ((NumberValue) lt).getNumber().sineIntegral();
 			}
-			return ev.polynomialOrDie(lt, this, "sineIntegral(");
+			return ev.polynomialOrDie(lt, this, "sinIntegral(");
 
 		}
 	},
@@ -1359,4 +1359,8 @@ public enum Operation {
 	public abstract ExpressionValue handle(ExpressionNodeEvaluator ev,
 			ExpressionValue lt, ExpressionValue rt, ExpressionValue left,
 			ExpressionValue right, StringTemplate tpl, boolean holdsLaTeX);
+
+	public boolean isPlusorMinus() {
+		return this.equals(PLUS) || this.equals(MINUS);
+	}
 }

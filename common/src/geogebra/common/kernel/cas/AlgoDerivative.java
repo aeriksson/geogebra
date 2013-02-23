@@ -16,13 +16,17 @@ import geogebra.common.kernel.Construction;
 import geogebra.common.kernel.StringTemplate;
 import geogebra.common.kernel.algos.AlgoCasBase;
 import geogebra.common.kernel.arithmetic.Function;
+import geogebra.common.kernel.arithmetic.FunctionNVar;
+import geogebra.common.kernel.arithmetic.FunctionVariable;
 import geogebra.common.kernel.arithmetic.MyArbitraryConstant;
 import geogebra.common.kernel.arithmetic.NumberValue;
 import geogebra.common.kernel.arithmetic.PolyFunction;
 import geogebra.common.kernel.commands.Commands;
 import geogebra.common.kernel.geos.CasEvaluableFunction;
+import geogebra.common.kernel.geos.GeoCurveCartesian;
 import geogebra.common.kernel.geos.GeoElement;
 import geogebra.common.kernel.geos.GeoFunction;
+import geogebra.common.kernel.geos.GeoFunctionNVar;
 import geogebra.common.kernel.geos.GeoNumeric;
 
 /**
@@ -101,11 +105,23 @@ public class AlgoDerivative extends AlgoCasBase {
 	protected void applyCasCommand(StringTemplate tpl) {
 
 
-		if (f instanceof GeoFunction) {
-			Function inFun = ((GeoFunction)f).getFunction();
+		
+		int orderInt = order == null ? 1 : (int) Math.round(order.getDouble());
 
+		if (f instanceof GeoFunction) {
+			
+			Function inFun = ((GeoFunction)f).getFunction();
+			if (!kernel.useCASforDerivatives()) {
+				
+				// fast general non-CAS method, output form not so nice
+				inFun = inFun.getDerivativeNoCAS(orderInt);
+				
+				((GeoFunction)g).setFunction(inFun);
+				((GeoFunction)g).setDefined(true);
+				return;
+			}
 			// check if it's a polynomial
-			PolyFunction polyDeriv = inFun.getNumericPolynomialDerivative(order == null ? 1 : (int) Math.round(order.getDouble()),true);
+			PolyFunction polyDeriv = inFun.getNumericPolynomialDerivative(orderInt, true);
 
 			// it it is...
 			if (polyDeriv != null) {
@@ -120,12 +136,43 @@ public class AlgoDerivative extends AlgoCasBase {
 				return;
 			}
 		}
-
+		
+		if (f instanceof GeoCurveCartesian) {
+			((GeoCurveCartesian)g).setDerivative((GeoCurveCartesian)f, orderInt);
+			return;
+		}
+		
 		// var.getLabel() can return a number in wrong alphabet (need ASCII)
-
-		// get variable string with tmp prefix, 
-		// e.g. "x" becomes "ggbtmpvarx" here
 		String varStr = var != null ? var.getLabel(tpl) : f.getVarString(tpl);
+
+		if (f instanceof GeoFunctionNVar) {
+			FunctionNVar inFun = ((GeoFunctionNVar)f).getFunction();
+			if (!kernel.useCASforDerivatives()) {
+				
+				// fast general non-CAS method, output form not so nice
+				FunctionVariable[] fVars = inFun.getFunctionVariables();
+				FunctionVariable fv = null;
+				
+				for (int i = 0 ; i < fVars.length ; i++) {
+					if (varStr.equals(fVars[i].getSetVarString())) {
+						fv = fVars[i];
+						break;
+					}
+				}
+				
+				if (fv == null) {
+					((GeoFunctionNVar)g).setDefined(false);
+					return;
+				}
+				
+				inFun = inFun.getDerivativeNoCAS(fv, orderInt);
+				
+				((GeoFunctionNVar)g).setFunction(inFun);
+				((GeoFunctionNVar)g).setDefined(true);
+				return;
+			}
+		}
+
 
 
 		sbAE.setLength(0);
@@ -155,15 +202,15 @@ public class AlgoDerivative extends AlgoCasBase {
 	        	char firstCh = orderStr.charAt(0);
 	        	if (firstCh >= '0' && firstCh <= '9') {
 	        		// numeric, convert 3 -> 3rd (in current locale)
-	        		orderStr = app.getOrdinalNumber((int)order.getDouble());
+	        		orderStr = loc.getOrdinalNumber((int)order.getDouble());
 	        	} else {
 	        		// symbolic, convert n -> nth (in current locale)
-	        		orderStr = app.getPlain("Ath", orderStr); 
+	        		orderStr = loc.getPlain("Ath", orderStr); 
 	        	}
 
-	        	sb.append(app.getPlain("ADerivativeOfB", orderStr, f.toGeoElement().getLabel(tpl)));
+	        	sb.append(loc.getPlain("ADerivativeOfB", orderStr, f.toGeoElement().getLabel(tpl)));
 	        } else {
-	        	sb.append(app.getPlain("DerivativeOfA",f.toGeoElement().getLabel(tpl)));
+	        	sb.append(loc.getPlain("DerivativeOfA",f.toGeoElement().getLabel(tpl)));
 	        }
         }
         

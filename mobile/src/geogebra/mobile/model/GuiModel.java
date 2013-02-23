@@ -8,7 +8,6 @@ import geogebra.common.kernel.geos.Test;
 import geogebra.mobile.gui.CommonResources;
 import geogebra.mobile.gui.elements.stylingbar.StyleBarStatic;
 import geogebra.mobile.gui.elements.stylingbar.StylingBar;
-import geogebra.mobile.gui.elements.toolbar.OptionsBarBackground;
 import geogebra.mobile.gui.elements.toolbar.ToolBarButton;
 import geogebra.mobile.utils.OptionType;
 import geogebra.mobile.utils.ToolBarCommand;
@@ -62,6 +61,12 @@ public class GuiModel
 	{
 		closeOptions();
 		setActive(tbb);
+		
+		if(this.mobileModel != null)
+		{
+			this.mobileModel.resetSelection(); 
+			this.mobileModel.repaint(); 
+		}
 	}
 
 	public void processSource(String string)
@@ -123,6 +128,10 @@ public class GuiModel
 		{
 			RootPanel.get().remove(this.option);
 			this.styleBarOptionShown = OptionType.Non;
+			
+			if(this.mobileModel != null){
+				this.mobileModel.optionsClosed(); 
+			}
 		}
 	}
 

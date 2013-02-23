@@ -1593,7 +1593,7 @@ public class Construction {
 					.debug("replace failed: oldXML string not found:\n"
 							+ oldXML);
 			// Application.debug("consXML=\n" + consXML);
-			throw new MyError(getApplication(), "ReplaceFailed");
+			throw new MyError(getApplication().getLocalization(), "ReplaceFailed");
 		}
 
 		// System.out.println("REDEFINE: oldGeo: " + oldGeo + ", newGeo: " +
@@ -2923,6 +2923,9 @@ public class Construction {
 		return algoSetCurrentlyUpdated;
 	}
 
+	/**
+	 * @param b new value of update construction flag
+	 */
 	public void setUpdateConstructionRunning(boolean b) {
 		updateConstructionRunning = b;		
 	}

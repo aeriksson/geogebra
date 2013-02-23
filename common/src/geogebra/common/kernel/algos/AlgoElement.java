@@ -1064,7 +1064,7 @@ public abstract class AlgoElement extends ConstructionElement implements
 			return null;
 		sbAE.setLength(0);
 		if (tpl.isPrintLocalizedCommandNames()) {
-			sbAE.append(app.getCommand(cmdname));
+			sbAE.append(loc.getCommand(cmdname));
 		} else {
 			sbAE.append(cmdname);
 		}
@@ -1094,7 +1094,7 @@ public abstract class AlgoElement extends ConstructionElement implements
 		if (geo.isGeoVector()) {
 			String vectorCommand = "Vector[";
 			if(tpl.isPrintLocalizedCommandNames())
-				vectorCommand = app.getCommand("Vector") + "["; // want it translated eg for redefine
+				vectorCommand = loc.getCommand("Vector") + "["; // want it translated eg for redefine
 																	// dialog
 			boolean needsWrapping = !geo.isLabelSet()
 					&& !cmd.startsWith(vectorCommand);
@@ -1316,7 +1316,7 @@ public abstract class AlgoElement extends ConstructionElement implements
 			sb.append(getOutput()[0].getXMLtypeString());
 			sb.append("\"");
 		}
-		if ((this instanceof AlgoFunctionInterval || this instanceof AlgoIfFunction) && getOutput(0) instanceof GeoFunction ) {
+		if ((this instanceof AlgoFunctionInterval || this instanceof AlgoDependentFunction) && getOutput(0) instanceof GeoFunction ) {
 			// need to write the geo type in the XML if it's undefined 
 			// so that it's the same type when the file is loaded again
 			App.debug("writing var");

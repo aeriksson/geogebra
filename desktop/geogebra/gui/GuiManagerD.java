@@ -138,7 +138,8 @@ public class GuiManagerD extends GuiManager {
 	private AssignmentView assignmentView;
 	private GeoGebraMenuBar menuBar;
 	private JMenuBar menuBar2;
-
+	private String strCustomToolbarDefinition;
+	
 	private ToolbarContainer toolbarPanel;
 	private boolean htmlLoaded;// see #126
 
@@ -2015,9 +2016,9 @@ public class GuiManagerD extends GuiManager {
 
 						JOptionPane.showConfirmDialog(
 								(app).getMainComponent(),
-								app.getError("FileNotFound") + ":\n"
+								app.getLocalization().getError("FileNotFound") + ":\n"
 										+ file.getAbsolutePath(),
-								app.getError("Error"),
+								app.getLocalization().getError("Error"),
 								JOptionPane.DEFAULT_OPTION,
 								JOptionPane.WARNING_MESSAGE);
 
@@ -3057,4 +3058,7 @@ public class GuiManagerD extends GuiManager {
 		return app;
 	}
 
+	public void setToolBarDefinition(String toolBarDefinition) {
+		strCustomToolbarDefinition = toolBarDefinition;
+	}
 }

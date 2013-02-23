@@ -17,6 +17,7 @@ the Free Software Foundation.
 package geogebra.common.kernel.arithmetic;
 
 import geogebra.common.kernel.StringTemplate;
+import geogebra.common.main.App;
 
 import java.util.Set;
 import java.util.Vector;
@@ -362,5 +363,16 @@ public abstract class ValidExpression implements ExpressionValue {
 	public boolean hasCoords() {
 		return false;
 	}
+	
+	public ExpressionValue derivative(FunctionVariable fv) {
+		App.debug("derivative from "+this.getClass());
+		return null;
+	}
+
+	public ExpressionValue integral(FunctionVariable fv) {
+		App.debug("integral from "+this.getClass());
+		return null;
+	}
+
 
 }

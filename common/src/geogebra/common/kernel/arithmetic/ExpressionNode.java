@@ -35,6 +35,7 @@ import geogebra.common.kernel.geos.GeoPolygon;
 import geogebra.common.kernel.geos.GeoSegment;
 import geogebra.common.kernel.geos.GeoVec2D;
 import geogebra.common.main.App;
+import geogebra.common.main.Localization;
 import geogebra.common.main.MyError;
 import geogebra.common.plugin.Operation;
 import geogebra.common.util.StringUtil;
@@ -1047,7 +1048,7 @@ public class ExpressionNode extends ValidExpression implements
 								func.getFunctionVariables()[i], ev).wrap();
 					}
 				} else {
-					throw new MyError(app,
+					throw new MyError(app.getLocalization(),
 							new String[] { "IllegalArgumentNumber" });
 				}
 				expr.makePolynomialTree(equ);
@@ -2119,7 +2120,7 @@ public class ExpressionNode extends ValidExpression implements
 				// check for 0 at right
 				if (valueForm
 						&& rightStr
-								.equals(App.unicodeZero + "")) {
+								.equals(Localization.unicodeZero + "")) {
 					break;
 				}
 
@@ -2208,12 +2209,12 @@ public class ExpressionNode extends ValidExpression implements
 
 				// check for degree sign or 1degree or degree1 (eg for Arabic)
 				else if (((rightStr.length() == 2) && (((rightStr.charAt(0) == Unicode.degreeChar) && (rightStr
-						.charAt(1) == (App.unicodeZero + 1))) || ((rightStr
+						.charAt(1) == (Localization.unicodeZero + 1))) || ((rightStr
 						.charAt(0) == Unicode.degreeChar) && (rightStr
-						.charAt(1) == (App.unicodeZero + 1)))))
+						.charAt(1) == (Localization.unicodeZero + 1)))))
 						|| rightStr.equals(Unicode.degree)) {
 
-					boolean rtl = app.isRightToLeftDigits(tpl);
+					boolean rtl = app.getLocalization().isRightToLeftDigits(tpl);
 
 					if (rtl) {
 						sb.append(Unicode.degree);
@@ -3004,7 +3005,6 @@ public class ExpressionNode extends ValidExpression implements
 
 			break;
 		case EXP:
-			// Application.debug("EXP");
 			switch (stringType) {
 			case MATHML:
 				mathml(sb, "<exp/>", leftStr, null);
@@ -3017,7 +3017,7 @@ public class ExpressionNode extends ValidExpression implements
 				boolean addParentheses = (left.isExpressionNode() && ((ExpressionNode) left)
 						.getOperation().equals(Operation.POWER));
 
-				sb.append("e^{");
+				sb.append("\\mathit{e}^{");
 				if (addParentheses) {
 					sb.append(leftBracket(stringType));
 				}
@@ -4014,7 +4014,7 @@ public class ExpressionNode extends ValidExpression implements
 
 		// TODO: put back into case FUNCTION_NVAR:, see #1115
 		case ELEMENT_OF:
-			sb.append(app.getCommand("Element"));
+			sb.append(app.getLocalization().getCommand("Element"));
 			sb.append('[');
 			if (left.isGeoElement()) {
 				sb.append(((GeoElement) left).getLabel(tpl));
@@ -4961,6 +4961,62 @@ public class ExpressionNode extends ValidExpression implements
 	}
 
 	/**
+	 * @return result of sec(this)
+	 */
+	public ExpressionNode sec() {
+		return new ExpressionNode(kernel, this, Operation.SEC, null);
+	}
+
+	/**
+	 * @return result of tan(this)
+	 */
+	public ExpressionNode tan() {
+		return new ExpressionNode(kernel, this, Operation.TAN, null);
+	}
+
+	/**
+	 * @return result of sech(this)
+	 */
+	public ExpressionNode sech() {
+		return new ExpressionNode(kernel, this, Operation.SECH, null);
+	}
+
+	/**
+	 * @return result of tanh(this)
+	 */
+	public ExpressionNode tanh() {
+		return new ExpressionNode(kernel, this, Operation.TANH, null);
+	}
+
+	/**
+	 * @return result of cosech(this)
+	 */
+	public ExpressionNode cosech() {
+		return new ExpressionNode(kernel, this, Operation.CSCH, null);
+	}
+
+	/**
+	 * @return result of coth(this)
+	 */
+	public ExpressionNode coth() {
+		return new ExpressionNode(kernel, this, Operation.COTH, null);
+	}
+
+	/**
+	 * @return result of cosec(this)
+	 */
+	public ExpressionNode cosec() {
+		return new ExpressionNode(kernel, this, Operation.CSC, null);
+	}
+
+	/**
+	 * @return result of cot(this)
+	 */
+	public ExpressionNode cot() {
+		return new ExpressionNode(kernel, this, Operation.COT, null);
+	}
+
+	/**
 	 * @return result of this!
 	 */
 	public ExpressionNode factorial() {
@@ -5016,6 +5072,41 @@ public class ExpressionNode extends ValidExpression implements
 	}
 
 	/**
+	 * @return result of polyganma(n, this)
+	 */
+	public ExpressionNode polygamma(double n) {
+		return new ExpressionNode(kernel, wrap(n), Operation.POLYGAMMA, this);
+	}
+
+	/**
+	 * @return result of sin(this)
+	 */
+	public ExpressionNode sin() {
+		return new ExpressionNode(kernel, this, Operation.SIN, null);
+	}
+
+	/**
+	 * @return result of sinh(this)
+	 */
+	public ExpressionNode sinh() {
+		return new ExpressionNode(kernel, this, Operation.SINH, null);
+	}
+
+	/**
+	 * @return result of cosh(this)
+	 */
+	public ExpressionNode cosh() {
+		return new ExpressionNode(kernel, this, Operation.COSH, null);
+	}
+
+	/**
+	 * @return result of cos(this)
+	 */
+	public ExpressionNode cos() {
+		return new ExpressionNode(kernel, this, Operation.COS, null);
+	}
+
+	/**
 	 * @return result of 1/this
 	 */
 	public ExpressionNode reciprocate() {
@@ -5028,6 +5119,13 @@ public class ExpressionNode extends ValidExpression implements
 	 */
 	public ExpressionNode sqrt() {
 		return new ExpressionNode(kernel, this, Operation.SQRT, null);
+	}
+
+	/**
+	 * @return result of cbrt(this)
+	 */
+	public ExpressionNode cbrt() {
+		return new ExpressionNode(kernel, this, Operation.CBRT, null);
 	}
 
 	/**
@@ -5126,6 +5224,20 @@ public class ExpressionNode extends ValidExpression implements
 	 *            value to multiply
 	 * @return result of multiply
 	 */
+	public ExpressionNode multiplyR(double d) {
+		if (Kernel.isZero(d)) {
+			return new ExpressionNode(kernel, 0);
+		} else if (Kernel.isEqual(1,  d)) {
+			return this;
+		}
+		return new ExpressionNode(kernel, new MyDouble(kernel, d), Operation.MULTIPLY, this);
+	}
+
+	/**
+	 * @param d
+	 *            value to multiply
+	 * @return result of multiply
+	 */
 	public ExpressionNode power(double d) {
 		if (Kernel.isZero(d)) {
 			return new ExpressionNode(kernel, 1);
@@ -5177,6 +5289,19 @@ public class ExpressionNode extends ValidExpression implements
 
 	/**
 	 * @param v2
+	 *            coefficient
+	 * @return result of multiplication
+	 */
+	public ExpressionNode multiplyR(ExpressionValue v2) {
+		if (isConstantDouble(v2, 0))
+			return v2.wrap();
+		if (isConstantDouble(v2, 1))
+			return this;
+		return new ExpressionNode(kernel, this, Operation.MULTIPLY, v2);
+	}
+
+	/**
+	 * @param v2
 	 *            exponent
 	 * @return resulting power
 	 */
@@ -5213,6 +5338,13 @@ public class ExpressionNode extends ValidExpression implements
 	 * @return result of division
 	 */
 	public ExpressionNode divide(double d) {
+		if (Kernel.isEqual(1,  d)) {
+			return this;
+		}
+		if (Kernel.isEqual(-1,  d)) {
+			return this.multiplyR(-1);
+		}
+		
 		return new ExpressionNode(kernel, this, Operation.DIVIDE, new MyDouble(
 				kernel, d));
 	}
@@ -5381,5 +5513,671 @@ public class ExpressionNode extends ValidExpression implements
 		if (isLeaf() )
 			return left!=null && left.hasCoords();
 		return getLeft().hasCoords() || getRight().hasCoords();
+	}
+
+	@Override
+	public ExpressionNode derivative(FunctionVariable fv) {
+		switch (operation) {
+		
+		case XCOORD:
+		case YCOORD:
+		case ZCOORD:
+			return new ExpressionNode(kernel, 0d);
+			
+		case POWER:
+			if (right.isNumberValue() && !right.contains(fv)) {
+				if (Kernel.isZero(right.evaluateNum().getDouble())) {
+					return wrap(new MyDouble(kernel, 0d));
+				}
+				
+				return wrap(left).power(wrap(right).subtract(1)).multiply(left.derivative(fv)).multiply(right);
+			}
+			
+			
+			return wrap(left).power(right).multiply(wrap(right.derivative(fv)).multiply(wrap(left).ln()).plus(wrap(right).multiply(left.derivative(fv)).divide(left)));
+			
+		case NO_OPERATION:
+			return wrap(left.derivative(fv));
+		case DIVIDE:			
+			if (right.isNumberValue() && !right.contains(fv)) {
+				return wrap(left).derivative(fv).divide(right);
+			}
+			return wrap(left.derivative(fv)).multiply(right).subtract(wrap(right.derivative(fv)).multiply(left)).divide(wrap(right).square());
+		case MULTIPLY:			
+			if (right.isNumberValue() && !right.contains(fv)) {
+				return wrap(left).derivative(fv).multiply(right);
+			}
+			if (left.isNumberValue() && !left.contains(fv)) {
+				return wrap(right).derivative(fv).multiply(left);
+			}
+			return wrap(left).multiply(right.derivative(fv)).plus(wrap(right).multiply(left.derivative(fv)));
+		case PLUS:			
+			return wrap(left.derivative(fv)).plus(right.derivative(fv));
+		case MINUS:			
+			return wrap(left.derivative(fv)).subtract(right.derivative(fv));
+		case SIN:			
+			return new ExpressionNode(kernel, left, Operation.COS, null).multiply((left).derivative(fv));
+		case COS:			
+			return new ExpressionNode(kernel, left, Operation.SIN, null).multiply((left).derivative(fv)).multiply(-1);
+		case TAN:			
+			return new ExpressionNode(kernel, left, Operation.SEC, null).square().multiply((left).derivative(fv));
+		case SEC:			
+			return new ExpressionNode(kernel, left, Operation.SEC, null).multiply(new ExpressionNode(kernel, left, Operation.TAN, null)).multiply((left).derivative(fv));
+		case CSC:			
+			return new ExpressionNode(kernel, left, Operation.CSC, null).multiply(new ExpressionNode(kernel, left, Operation.COT, null)).multiply((left).derivative(fv)).multiply(-1);
+		case COT:			
+			return new ExpressionNode(kernel, left, Operation.CSC, null).square().multiply((left).derivative(fv)).multiply(-1);
+		case SINH:			
+			return new ExpressionNode(kernel, left, Operation.COSH, null).multiply((left).derivative(fv));
+		case COSH:			
+			return new ExpressionNode(kernel, left, Operation.SINH, null).multiply((left).derivative(fv));
+		case TANH:			
+			return new ExpressionNode(kernel, left, Operation.SECH, null).square().multiply((left).derivative(fv));
+		case SECH:			
+			return new ExpressionNode(kernel, left, Operation.SECH, null).multiply(new ExpressionNode(kernel, left, Operation.TANH, null)).multiply((left).derivative(fv)).multiply(-1);
+		case CSCH:			
+			return new ExpressionNode(kernel, left, Operation.CSCH, null).multiply(new ExpressionNode(kernel, left, Operation.COTH, null)).multiply((left).derivative(fv)).multiply(-1);
+		case COTH:			
+			return new ExpressionNode(kernel, left, Operation.CSCH, null).square().multiply((left).derivative(fv)).multiply(-1);
+			
+		case ARCSIN:
+			return wrap(left.derivative(fv)).divide(wrap(left).square().subtractR(1).sqrt());
+		case ARCCOS:
+			return wrap(left.derivative(fv)).divide(wrap(left).square().subtractR(1).sqrt()).multiply(-1);
+		case ARCTAN:
+			return wrap(left.derivative(fv)).divide(wrap(left).square().plus(1));
+		
+		case ASINH:
+			return wrap(left.derivative(fv)).divide(wrap(left).square().plus(1).sqrt());
+		case ACOSH:
+			// sqrt(x+1)sqrt(x-1) not sqrt(x^2-1) as has wrong domain
+			return wrap(left.derivative(fv)).divide(wrap(left).plus(1).sqrt().multiply(wrap(left).subtract(1).sqrt()));
+		case ATANH:
+			return wrap(left.derivative(fv)).divide(wrap(left).square().subtractR(1));
+			
+		case ABS:
+			return wrap(left.derivative(fv)).multiply(left).divide(wrap(left).abs());
+			
+		case SGN:
+			// 0/x
+			return wrap(new MyDouble(kernel, 0)).divide(fv);
+				
+		case EXP:
+			return wrap(left.derivative(fv)).multiply(wrap(left).exp());
+				
+		case SI:
+			return wrap(left.derivative(fv)).multiply(wrap(left).sin().divide(left));
+				
+		case CI:
+			return wrap(left.derivative(fv)).multiply(wrap(left).cos().divide(left));
+				
+		case EI:
+			return wrap(left.derivative(fv)).multiply(wrap(left).exp().divide(left));
+				
+		case ERF:
+			return wrap(left.derivative(fv)).multiply(wrap(2)).divide(wrap(left).square().exp().multiply(wrap(Math.PI).sqrt()));
+				
+		case PSI:
+			return wrap(left.derivative(fv)).multiply(wrap(left).polygamma(1));
+				
+		case POLYGAMMA:
+			if (left.isNumberValue() && !left.contains(fv)) {
+				double n = ((NumberValue) left).getDouble();
+				return wrap(right.derivative(fv)).multiply(wrap(right).polygamma(n + 1));
+			}
+				
+			// TODO: general method (not possible?)
+			break;
+			
+		case IF_ELSE:
+			MyNumberPair np = (MyNumberPair) left;
+						
+			np = new MyNumberPair(kernel, np.x, np.y.derivative(fv));
+			
+			return new ExpressionNode(kernel, np, Operation.IF_ELSE, right.derivative(fv));
+			
+		case IF:
+			
+			return new ExpressionNode(kernel, left, Operation.IF, right.derivative(fv));
+			
+		case LOG:
+			// base e (ln)
+			return wrap(left.derivative(fv)).divide(left);
+				
+		case LOG10:
+			return wrap(left.derivative(fv)).divide(left).divide(Math.log(10));
+				
+		case LOG2:
+			return wrap(left.derivative(fv)).divide(left).divide(Math.log(2));
+				
+		case LOGB:
+			if (left.isNumberValue() && !left.contains(fv)) {
+				return wrap(right.derivative(fv)).divide(right).divide(Math.log(((NumberValue) left).getDouble()));
+			}
+			
+			// TODO: general method
+			break;
+			
+			
+		case NROOT:			
+			if (right.isNumberValue() && !right.contains(fv)) {
+				return wrap(left.derivative(fv)).multiply(wrap(left).nroot(right)).divide(wrap(left).multiply(right));
+			}
+			
+			// TODO general method
+			break;
+				
+		case SQRT:
+		case SQRT_SHORT:
+			return wrap(left.derivative(fv)).multiply(wrap(left).power(-0.5)).divide(2);
+		case CBRT:
+			// wrong domain
+			//return wrap(left.derivative(fv)).multiply(wrap(left).power(-2d/3d)).divide(3);
+			// correct domain
+			return wrap(left.derivative(fv)).divide(wrap(left).square().cbrt()).divide(3);
+		
+		}
+
+		App.error("unhandled operation in derivative() (no CAS version): "+operation.toString());
+		
+		// undefined
+		return wrap(Double.NaN);
+	}
+	
+	@Override
+	public ExpressionNode integral(FunctionVariable fv) {
+		switch (operation) {
+
+		case XCOORD:
+		case YCOORD:
+		case ZCOORD:
+			return new ExpressionNode(kernel, this, Operation.MULTIPLY, fv);
+
+		case POWER:
+			// eg x^2
+			if (left == fv && !right.contains(fv)) {
+				double index = right.evaluateNum().getDouble();
+				if (!Double.isNaN(index) && !Double.isInfinite(index)) {
+
+					if (Kernel.isZero(index + 1)) {
+						return new ExpressionNode(kernel, left, Operation.LOG, null);
+					}
+					return wrap(left).power(index + 1).divide(index + 1);
+				}
+			} else if (!left.contains(fv)) {
+
+				// eg 2^x
+				if (right == fv) {
+					double base = left.evaluateNum().getDouble();
+					if (!Double.isNaN(base) && !Double.isInfinite(base)) {
+
+						// 1^x
+						if (Kernel.isEqual(base, 1)) {
+							return wrap(fv);
+						}
+
+						if (Kernel.isGreater(base, 0)) {
+							return this.divide(wrap(left).ln());
+						}
+					}
+				}
+
+			} else if (right.isNumberValue() && !right.contains(fv)) {
+
+				double index = right.evaluateNum().getDouble();
+				if (!Double.isNaN(index) && !Double.isInfinite(index)) {
+
+					double coeff = getLinearCoefficient(fv, left);
+					if (!Double.isNaN(coeff)) {
+
+						// (exp)^-1 -> ln(abs(exp))
+						if (Kernel.isEqual(index, -1)) {
+							return wrap(left).abs().ln().divide(coeff);							
+						}
+						return wrap(left).power(index + 1).divide(coeff * ((index + 1)));
+					}
+
+					coeff = getLinearCoefficientDiv(fv, left);
+
+					if (!Double.isNaN(coeff)) {
+						if (Kernel.isEqual(index, -1)) {
+							// (exp)^-1 -> ln(abs(exp))
+							return wrap(left).abs().ln().multiply(coeff);							
+						}
+						return wrap(left).power(index + 1).multiply(coeff / ((index + 1)));
+					}
+				}
+
+			}
+
+			break;
+			
+		case NO_OPERATION:
+			return wrap(left.integral(fv));
+		case DIVIDE:		
+			if (right.isNumberValue() && !right.contains(fv)) {
+				return wrap(left.integral(fv)).divide(right);
+			}
+			
+			if (left.isNumberValue()  && !left.contains(fv) && right == fv) {
+				// eg 4/x
+				return new ExpressionNode(kernel, fv, Operation.LOG, null).multiply(left);
+			}
+			break;
+			
+		case MULTIPLY:			
+			if (right.isNumberValue() && !right.contains(fv)) {
+				return wrap(left.integral(fv)).multiplyR(right);
+			} else if (left.isNumberValue() && !left.contains(fv)) {
+				return wrap(right.integral(fv)).multiplyR(left);
+			}
+			
+			// can't do by parts without simplification (use Polynomial?)
+			break;
+
+		case PLUS:			
+			return wrap(left.integral(fv)).plus(right.integral(fv));
+		case MINUS:			
+			return wrap(left.integral(fv)).subtract(right.integral(fv));
+		case SIN:		
+			return linearIntegral(-1, Operation.COS, fv);
+		case COS:			
+			return linearIntegral(1, Operation.SIN, fv);
+		case TAN:			
+			double coeff = getLinearCoefficient(fv, left);
+			
+			if (!Double.isNaN(coeff)) {
+				return wrap(left).sec().abs().ln().divide(coeff);
+			}
+			
+			coeff = getLinearCoefficientDiv(fv, left);
+			
+			if (!Double.isNaN(coeff)) {
+				return wrap(left).sec().abs().ln().multiply(coeff);	
+			}
+			
+			break;
+			
+		case SEC:			
+			coeff = getLinearCoefficient(fv, left);
+			
+			if (!Double.isNaN(coeff)) {
+				return wrap(left).sec().plus(wrap(left).tan()).abs().ln().divide(coeff);
+			}
+			
+			coeff = getLinearCoefficientDiv(fv, left);
+			
+			if (!Double.isNaN(coeff)) {
+				return wrap(left).sec().plus(wrap(left).tan()).abs().ln().multiply(coeff);	
+			}
+			
+			break;
+		case CSC:			
+			coeff = getLinearCoefficient(fv, left);
+			
+			if (!Double.isNaN(coeff)) {
+				return wrap(left).cosec().plus(wrap(left).cot()).abs().ln().divide(-coeff);
+			}
+			
+			coeff = getLinearCoefficientDiv(fv, left);
+			
+			if (!Double.isNaN(coeff)) {
+				return wrap(left).cosec().plus(wrap(left).cot()).abs().ln().multiply(-coeff);	
+			}
+			
+			break;
+		case COT:			
+			coeff = getLinearCoefficient(fv, left);
+			
+			if (!Double.isNaN(coeff)) {
+				return wrap(left).sin().abs().ln().divide(coeff);
+			}
+			
+			coeff = getLinearCoefficientDiv(fv, left);
+			
+			if (!Double.isNaN(coeff)) {
+				return wrap(left).sin().abs().ln().multiply(coeff);	
+			}
+			
+			break;
+		case SINH:			
+			return linearIntegral(1, Operation.COSH, fv);
+		case COSH:			
+			return linearIntegral(1, Operation.SINH, fv);
+		case TANH:			
+			coeff = getLinearCoefficient(fv, left);
+			
+			if (!Double.isNaN(coeff)) {
+				return wrap(left).cosh().abs().ln().divide(coeff);
+			}
+			
+			coeff = getLinearCoefficientDiv(fv, left);
+			
+			if (!Double.isNaN(coeff)) {
+				return wrap(left).cosh().abs().ln().multiply(coeff);	
+			}
+			
+			break;
+		case SECH:			
+			coeff = getLinearCoefficient(fv, left);
+			
+			if (!Double.isNaN(coeff)) {
+				return wrap(left).exp().atan().divide(coeff/2);
+			}
+			
+			coeff = getLinearCoefficientDiv(fv, left);
+			
+			if (!Double.isNaN(coeff)) {
+				return wrap(left).exp().atan().multiply(2 * coeff);	
+			}
+			
+			break;
+		case CSCH:			
+			coeff = getLinearCoefficient(fv, left);
+			
+			if (!Double.isNaN(coeff)) {
+				return wrap(left).cosech().plus(wrap(left).coth()).abs().ln().divide(-coeff);
+			}
+			
+			coeff = getLinearCoefficientDiv(fv, left);
+			
+			if (!Double.isNaN(coeff)) {
+				return wrap(left).cosech().plus(wrap(left).coth()).abs().ln().multiply(-coeff);	
+			}
+			
+			break;
+		case COTH:			
+			coeff = getLinearCoefficient(fv, left);
+			
+			if (!Double.isNaN(coeff)) {
+				return wrap(left).sinh().abs().ln().divide(coeff);
+			}
+			
+			coeff = getLinearCoefficientDiv(fv, left);
+			
+			if (!Double.isNaN(coeff)) {
+				return wrap(left).sinh().abs().ln().multiply(coeff);	
+			}
+			
+			break;
+			
+		case EXP:
+			return linearIntegral(1, Operation.EXP, fv);
+
+		case ARCSIN:
+		case ARCCOS:
+		case ARCTAN:
+		
+		case ASINH:
+		case ACOSH:
+		case ATANH:
+		case ABS:
+		case SGN:
+				
+		case SI:
+		case CI:
+		case EI:
+		case ERF:
+		case PSI:
+		case POLYGAMMA:
+		case LOGB:
+			
+			break;
+
+		case IF_ELSE:
+			MyNumberPair np = (MyNumberPair) left;
+						
+			np = new MyNumberPair(kernel, np.x, np.y.derivative(fv));
+			
+			return new ExpressionNode(kernel, np, Operation.IF_ELSE, right.integral(fv));
+			
+		case IF:
+			
+			return new ExpressionNode(kernel, left, Operation.IF, right.integral(fv));
+			
+		case LOG:
+			// base e (ln)
+			coeff = getLinearCoefficient(fv, left);
+			
+			if (!Double.isNaN(coeff)) {
+				return wrap(left).ln().multiply(left).subtract(left).divide(coeff);
+			}
+			
+			coeff = getLinearCoefficientDiv(fv, left);
+			
+			if (!Double.isNaN(coeff)) {
+				return wrap(left).ln().multiply(left).subtract(left).multiply(coeff);
+			}
+			
+			break;
+				
+		case LOG10:
+			coeff = getLinearCoefficient(fv, left);
+			
+			if (!Double.isNaN(coeff)) {
+				return wrap(left).ln().multiply(left).subtract(left).divide(wrap(10).ln().multiply(coeff));
+			}
+			
+			coeff = getLinearCoefficientDiv(fv, left);
+			
+			if (!Double.isNaN(coeff)) {
+				return wrap(left).ln().multiply(left).subtract(left).multiply(coeff).divide(wrap(10).ln());
+			}
+			
+			break;
+				
+		case LOG2:
+			coeff = getLinearCoefficient(fv, left);
+			
+			if (!Double.isNaN(coeff)) {
+				return wrap(left).ln().multiply(left).subtract(left).divide(wrap(2).ln().multiply(coeff));
+			}
+			
+			coeff = getLinearCoefficientDiv(fv, left);
+			
+			if (!Double.isNaN(coeff)) {
+				return wrap(left).ln().multiply(left).subtract(left).multiply(coeff).divide(wrap(2).ln());
+			}
+			
+			break;
+				
+				
+			
+		case NROOT:			
+			if (right.isNumberValue() && !right.contains(fv)) {
+				coeff = getLinearCoefficient(fv, left);
+				
+				if (!Double.isNaN(coeff)) {
+					return wrap(left).nroot(right).multiply(left).multiply(right).divide((right.evaluateNum().getDouble() + 1) * coeff);
+				}
+				
+				coeff = getLinearCoefficientDiv(fv, left);
+				
+				if (!Double.isNaN(coeff)) {
+					return wrap(left).nroot(right).multiply(left).multiply(right).divide((right.evaluateNum().getDouble() + 1) / coeff);
+				}
+			}
+			
+			break;
+				
+		case SQRT:
+		case SQRT_SHORT:
+			coeff = getLinearCoefficient(fv, left);
+			
+			if (!Double.isNaN(coeff)) {
+				return wrap(left).sqrt().multiply(left).divide(coeff * 3d / 2d);
+			}
+			
+			coeff = getLinearCoefficientDiv(fv, left);
+			
+			if (!Double.isNaN(coeff)) {
+				return wrap(left).sqrt().multiply(left).multiply(coeff * 2d / 3d);
+			}
+			
+			break;
+		case CBRT:
+			coeff = getLinearCoefficient(fv, left);
+			
+			if (!Double.isNaN(coeff)) {
+				return wrap(left).cbrt().multiply(left).divide(coeff * 4d / 3d);
+			}
+			
+			coeff = getLinearCoefficientDiv(fv, left);
+			
+			if (!Double.isNaN(coeff)) {
+				return wrap(left).cbrt().multiply(left).multiply(coeff * 3d / 4d);
+			}
+			
+			break;
+		
+		}
+
+		App.error("unhandled operation in derivative() (no CAS version): "+operation.toString());
+		
+		// undefined
+		return wrap(Double.NaN);
+	}
+
+
+	/**
+	 * @param n n
+	 * @return nth root of this
+	 */
+	public ExpressionNode nroot(ExpressionValue n) {
+		return new ExpressionNode(kernel, this, Operation.NROOT, n);
+	}
+
+	private ExpressionNode linearIntegral(int i, Operation op, FunctionVariable fv) {
+		if (left == fv) {
+			return new ExpressionNode(kernel, left, op, null).multiplyR(i);				
+		}
+		
+		double coeff = getLinearCoefficient(fv, left);
+		
+		if (!Double.isNaN(coeff)) {
+			return new ExpressionNode(kernel, left, op, null).multiplyR(i).divide(coeff);		
+		}
+		
+		coeff = getLinearCoefficientDiv(fv, left);
+		
+		if (!Double.isNaN(coeff)) {
+			return new ExpressionNode(kernel, left, op, null).multiply(coeff).multiplyR(i);		
+		}
+		
+		App.debug("not linear integral");
+		return wrap(Double.NaN);
+	}
+
+	/**
+	 * get coefficient from simple linear expression with coefficient as divide eg 
+	 * 3 * x + 1
+	 * 
+	 * returns Double.NaN if it's not in the correct form
+	 */
+	private static double getLinearCoefficient(FunctionVariable fv, ExpressionValue ev2) {
+		
+		// just x
+		if (ev2 == fv) {
+			return 1;
+		}
+		
+		ExpressionValue ev = ev2;
+		double factor = 1;
+		Operation op;
+		
+		// 3x+1 or 1+3x or 3x-1 or 1-3x
+		if (ev.isExpressionNode() && (op = ((ExpressionNode) ev).getOperation()).isPlusorMinus() ) {
+			ExpressionNode en = (ExpressionNode) ev;
+			
+			if (en.left.isNumberValue() && !en.left.contains(fv)) {
+				//strip off the "+1" etc
+				ev = en.right;
+				factor = op.equals(Operation.PLUS) ? 1 : -1;
+			} else if (en.right.isNumberValue() && !en.right.contains(fv)) {
+				//strip off the "+1" etc
+				ev = en.left;
+				factor = 1;
+			}
+		}
+		
+		// x+2 or 2-x
+		if (ev == fv) {
+			return factor;
+		}		
+		
+		// 3*x or x*3
+		if (ev.isExpressionNode() && ((ExpressionNode) ev).getOperation().equals(Operation.MULTIPLY) ) {
+			ExpressionNode en = (ExpressionNode) ev;
+			if (en.left == fv && en.right.isNumberValue() && !en.right.contains(fv)) {
+				return ((NumberValue) en.right).getDouble() * factor;
+				//return wrap(en.right).multiply(factor);
+			} else if (en.right == fv && en.left.isNumberValue() && !en.left.contains(fv)) {
+				return ((NumberValue) en.left).getDouble() * factor;
+				//return wrap(en.left).multiply(factor);
+			}
+		}
+		
+		// not (simple) linear
+		return Double.NaN;
+	}
+
+	/**
+	 * get coefficient from simple linear expression with coefficient as divide eg 
+	 * x / 3 + 1
+	 * 
+	 * returns Double.NaN if it's not in the correct form
+	 */
+	private static double getLinearCoefficientDiv(FunctionVariable fv, ExpressionValue ev2) {
+
+		ExpressionValue ev = ev2;
+		double factor = 1;
+		Operation op;
+		
+		// x/3+1 or 1+x/3 or x/3-1 or 1-x/3
+		if (ev.isExpressionNode() && (op = ((ExpressionNode) ev).getOperation()).isPlusorMinus() ) {
+			ExpressionNode en = (ExpressionNode) ev;
+			
+			if (en.left.isNumberValue() && !en.left.contains(fv)) {
+				//strip off the "+1" etc
+				ev = en.right;
+				factor = op.equals(Operation.PLUS) ? 1 : -1;
+			} else if (en.right.isNumberValue() && !en.right.contains(fv)) {
+				//strip off the "+1" etc
+				ev = en.left;
+				factor = 1;
+			}
+		}
+
+		// x/3
+		if (ev.isExpressionNode() && ((ExpressionNode) ev).getOperation().equals(Operation.DIVIDE) ) {
+			ExpressionNode en = (ExpressionNode) ev;
+			if (en.left == fv && en.right.isNumberValue() && !en.right.contains(fv)) {
+				return ((NumberValue) en.right).getDouble() * factor;
+			}
+		}
+		
+		// not (simple) linear
+		return Double.NaN;
+	}
+
+	private ExpressionNode wrap(double n) {
+		return wrap(new MyDouble(kernel, n));
+	}
+
+	private static ExpressionNode wrap(ExpressionValue ev) {
+		
+		if (ev.isExpressionNode()) {
+			return (ExpressionNode) ev;
+		}
+		
+		return new ExpressionNode(ev.getKernel(), ev, Operation.NO_OPERATION, null);
+	}
+	
+	public boolean isConditional(){
+		return operation == Operation.IF || operation == Operation.IF_ELSE;
+	}
+
+	public ExpressionNode ifElse(ExpressionValue ifBranch, ExpressionValue elseBranch) {
+		return new ExpressionNode(kernel,new MyNumberPair(kernel,this,ifBranch),Operation.IF_ELSE,elseBranch);
 	}
 }

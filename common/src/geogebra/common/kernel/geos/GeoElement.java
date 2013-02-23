@@ -50,6 +50,7 @@ import geogebra.common.kernel.algos.EquationScopeInterface;
 import geogebra.common.kernel.arithmetic.ExpressionNode;
 import geogebra.common.kernel.arithmetic.ExpressionNodeConstants.StringType;
 import geogebra.common.kernel.arithmetic.ExpressionValue;
+import geogebra.common.kernel.arithmetic.FunctionVariable;
 import geogebra.common.kernel.arithmetic.MyDouble;
 import geogebra.common.kernel.arithmetic.MyStringBuffer;
 import geogebra.common.kernel.arithmetic.NumberValue;
@@ -245,14 +246,69 @@ public abstract class GeoElement extends ConstructionElement implements
 	/** substitute for imageFileName and image - Arpad Fekete;
 	// 2011-12-01 */
 	protected GeoElementGraphicsAdapter graphicsadapter; 
-	/** fill type: standard*/
-	public static final int FILL_STANDARD = 0;
-	/** fill type: hatch*/
-	public static final int FILL_HATCH = 1;
-	/** fill type: image*/
-	public static final int FILL_IMAGE = 2;
+	
+	/**
+	 * Fill types of elements
+	 * @author Giulliano Bellucci
+	 */
+	public enum FillType{
+		
+		/**
+		 * Simple fill (color+opacity)
+		 */
+		STANDARD (0,false),
+		/**
+		 * Hatched fill
+		 */
+		HATCH (1,true),
+		/**
+		 * Crosshatched fill
+		 */
+		CROSSHATCHED (2,true),
+		/**
+		 * Chessboard fill, upright or diagonal
+		 */
+		CHESSBOARD (3,true),
+		/**
+		 * Dotted fill
+		 */
+		DOTTED (4,true),
+		/**
+		 * Honeycomb fill
+		 */
+		HONEYCOMB (5,true),
+		/**
+		 * Brick fill
+		 */
+		BRICK (6,true),
+		/**
+		 * Image background
+		 */
+		IMAGE (7,false);
+		
+		private int value;
+		private boolean hatch;
+		/**
+		 * @return value for XML
+		 */
+		int getValue(){
+			return value;
+		}
+		
+		private FillType(int value,boolean hatch){
+			this.value = value;
+			this.hatch = hatch;
+		}
+		/**
+		 * @return whether this is hatch or something else (image, standard)
+		 */
+		public boolean isHatch() {
+			return hatch;
+		}
+	}
+	
 	/** fill type*/
-	protected int fillType = FILL_STANDARD;
+	protected FillType fillType = FillType.STANDARD;
 	
 
 	// =================================
@@ -1710,10 +1766,10 @@ public abstract class GeoElement extends ConstructionElement implements
 			// else fall through:
 		case TOOLTIP_ON:
 
-			app.setTooltipFlag();
+			loc.setTooltipFlag();
 			final String ret = getLongDescriptionHTML(colored, false); // old
 																		// behaviour
-			app.clearTooltipFlag();
+			loc.clearTooltipFlag();
 
 			return ret;
 		case TOOLTIP_OFF:
@@ -2318,7 +2374,7 @@ public abstract class GeoElement extends ConstructionElement implements
 			return true;
 		} else {
 			final String str[] = { "NameUsed", newLabel };
-			throw new MyError(app, str);
+			throw new MyError(loc, str);
 		}
 	}
 
@@ -2523,7 +2579,7 @@ public abstract class GeoElement extends ConstructionElement implements
 			}
 		}
 
-		return app.translationFix(captionSB.toString());
+		return loc.translationFix(captionSB.toString());
 	}
 	/** @return caption without substitution; returns "" if caption is null*/
 	public String getRawCaption() {
@@ -2879,13 +2935,13 @@ public abstract class GeoElement extends ConstructionElement implements
 				// Michael Borcherds 2008-02-23
 				// use Greek upper case for labeling points if language is Greek
 				// (el)
-				if (app.isUsingLocalizedLabels()) {
-					if (app.languageIs(Language.Greek.locale)) {
+				if (loc.isUsingLocalizedLabels()) {
+					if (loc.languageIs(Language.Greek.locale)) {
 						chars = greekUpperCase;
-					} else if (app.languageIs(Language.Arabic.locale)) {
+					} else if (loc.languageIs(Language.Arabic.locale)) {
 						// Arabic / Arabic (Morocco)
 						chars = arabic;
-					} else if (app.languageIs(Language.Yiddish.locale)) {
+					} else if (loc.languageIs(Language.Yiddish.locale)) {
 						chars = yiddish;
 					} else {
 						chars = pointLabels;
@@ -2918,7 +2974,7 @@ public abstract class GeoElement extends ConstructionElement implements
 				if (isFromMeta() && !((FromMeta) this).getMeta().isGeoPolygon()) {
 					int counter = 0;
 					String str;
-					final String name = app.getPlainLabel("edge"); // Name.edge
+					final String name = loc.getPlainLabel("edge"); // Name.edge
 					do {
 						counter++;
 						str = name
@@ -3021,7 +3077,7 @@ public abstract class GeoElement extends ConstructionElement implements
 		String str;
 		do {
 			counter++;
-			str = app.getPlainLabel(plainKey)
+			str = loc.getPlainLabel(plainKey)
 					+ kernel.internationalizeDigits(counter + "",StringTemplate.defaultTemplate);
 		} while (!cons.isFreeLabel(str));
 		return str;
@@ -3730,7 +3786,7 @@ public abstract class GeoElement extends ConstructionElement implements
 	 * @param geo other geo
 	 * @return true if geo depends on this object.
 	 */
-	final public boolean isParentOf(final GeoElement geo) {
+	final public boolean isParentOf(final GeoElementND geo) {
 		if (algoUpdateSet != null) {
 			final Iterator<AlgoElement> it = algoUpdateSet
 					.getIterator();
@@ -3882,7 +3938,7 @@ public abstract class GeoElement extends ConstructionElement implements
 		if (algoParent == null) {
 			return "";
 		}
-		return indicesToHTML(app.translationFix(algoParent.toString(StringTemplate.defaultTemplate)),
+		return indicesToHTML(loc.translationFix(algoParent.toString(StringTemplate.defaultTemplate)),
 				addHTMLtag);
 	}
 
@@ -3952,7 +4008,7 @@ public abstract class GeoElement extends ConstructionElement implements
 		}
 
 		// check for index
-		return convertIndicesToHTML(app.translationFix(ret));
+		return convertIndicesToHTML(loc.translationFix(ret));
 	}
 
 	/**
@@ -4046,7 +4102,7 @@ public abstract class GeoElement extends ConstructionElement implements
 			sbLongDescHTML.append("<html>");
 		}
 
-		final boolean reverseOrder = app.isReverseNameDescriptionLanguage();
+		final boolean reverseOrder = loc.isReverseNameDescriptionLanguage();
 		if (!reverseOrder) {
 			// standard order: "point A"
 			sbLongDescHTML.append(typeString);
@@ -4078,7 +4134,7 @@ public abstract class GeoElement extends ConstructionElement implements
 		if (algoParent != null) {
 			// Guy Hed, 25.8.2008
 			// In order to present the text correctly in Hebrew and Arabic:
-			final boolean rightToLeft = app.isRightToLeftReadingOrder();
+			final boolean rightToLeft = loc.isRightToLeftReadingOrder();
 			if (rightToLeft) {
 				// sbLongDescHTML.append("\u200e\u200f: \u200e");
 				sbLongDescHTML.append(Unicode.LeftToRightMark);
@@ -4089,7 +4145,7 @@ public abstract class GeoElement extends ConstructionElement implements
 				sbLongDescHTML.append(": ");
 			}
 			sbLongDescHTML.append(indicesToHTML(
-					app.translationFix(algoParent.toString(StringTemplate.defaultTemplate)), false));
+					loc.translationFix(algoParent.toString(StringTemplate.defaultTemplate)), false));
 			if (rightToLeft) {
 				// sbLongDescHTML.append("\u200e");
 				sbLongDescHTML.append(Unicode.LeftToRightMark);
@@ -4502,7 +4558,7 @@ public abstract class GeoElement extends ConstructionElement implements
 		final String label1 = getLabel(StringTemplate.defaultTemplate);
 		final String typeString = translatedTypeString();
 
-		if (app.isReverseNameDescriptionLanguage()) {
+		if (loc.isReverseNameDescriptionLanguage()) {
 			// reverse order: "A point"
 			sbNameDescription.append(label1);
 			sbNameDescription.append(' ');
@@ -4568,7 +4624,7 @@ public abstract class GeoElement extends ConstructionElement implements
 		final String label1 = getLabel(StringTemplate.defaultTemplate);
 		final String typeString = translatedTypeString();
 
-		final boolean reverseOrder = app.isReverseNameDescriptionLanguage();
+		final boolean reverseOrder = loc.isReverseNameDescriptionLanguage();
 		if (!reverseOrder
 				// want "xAxis" not "Line xAxis"
 				&& !isAxis()) {
@@ -4825,12 +4881,14 @@ public abstract class GeoElement extends ConstructionElement implements
 			}
 
 			if (isHatchingEnabled()) {
-				sb.append(" hatchAngle=\"");
+				sb.append(" fillType=\"");
+				sb.append(fillType.ordinal());
+				sb.append("\" hatchAngle=\"");
 				sb.append(hatchingAngle);
 				sb.append("\" hatchDistance=\"");
 				sb.append(hatchingDistance);
 				sb.append("\"");
-			} else if (fillType == FILL_IMAGE) {
+			} else if (fillType == FillType.IMAGE) {
 				sb.append(" image=\"");
 				sb.append(graphicsadapter.getImageFileName());
 				sb.append('\"');
@@ -5697,10 +5755,10 @@ public abstract class GeoElement extends ConstructionElement implements
 					final GeoText movedGeoText = (GeoText) this;
 					if (movedGeoText.hasAbsoluteLocation()) {
 						// absolute location: change location
-						final GeoPoint loc = (GeoPoint) movedGeoText
+						final GeoPointND locPoint = movedGeoText
 								.getStartPoint();
-						if (loc != null) {
-							loc.translate(rwTransVec);
+						if (locPoint != null) {
+							locPoint.translate(rwTransVec);
 							movedGeo = true;
 						}
 					}
@@ -6260,7 +6318,7 @@ public abstract class GeoElement extends ConstructionElement implements
 	 * @return true if current fill style is hatch
 	 */
 	public boolean isHatchingEnabled() {
-		return fillType == FILL_HATCH;
+		return fillType.isHatch();
 	}
 
 	/**
@@ -6313,14 +6371,14 @@ public abstract class GeoElement extends ConstructionElement implements
 	/**
 	 * @return fill  type (standard/hatch/image)
 	 */
-	public int getFillType() {
+	public FillType getFillType() {
 		return fillType;
 	}
 
 	/**
 	 * @param fillType new fill type
 	 */
-	public void setFillType(final int fillType) {
+	public void setFillType(final FillType fillType) {
 		this.fillType = fillType;
 	}
 
@@ -6802,4 +6860,12 @@ public abstract class GeoElement extends ConstructionElement implements
 		}
 		
 	}	
+	
+	public ExpressionValue derivative(FunctionVariable fv) {
+		return null;
+	}
+	public ExpressionValue integral(FunctionVariable fv) {
+		return null;
+	}
+
 }

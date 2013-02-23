@@ -33,7 +33,6 @@ public abstract class GuiManager {
 	private static final String ggbTube = "geogebratube.org/";
 	private static final String ggbTubeShort = "ggbtu.be/";
 	private static final String material = "/material/show/id/";
-	protected String strCustomToolbarDefinition;
 	
 
 	public void updateMenubar() { } // temporarily nothing
@@ -168,10 +167,6 @@ public abstract class GuiManager {
 		return loadURL(urlString, true);
 	}
 
-	public void setToolBarDefinition(String toolBarDefinition) {
-		strCustomToolbarDefinition = toolBarDefinition;
-	}
-
 	/**
 	 * possible GeoGebraTube syntaxes
 	 * http://www.geogebratube.org/material/show/id/111
@@ -289,7 +284,7 @@ public abstract class GuiManager {
 		}
 	
 		if (!success && !suppressErrorMsg) {
-			getApp().showError(getApp().getError("LoadFileFailed") + "\n" + processedUrlString);
+			getApp().showError(getApp().getLocalization().getError("LoadFileFailed") + "\n" + processedUrlString);
 		}
 	
 		updateGUIafterLoadFile(success, isMacroFile);
@@ -575,7 +570,5 @@ public abstract class GuiManager {
 	 * 
 	 * @return id of view which is setting the active toolbar
 	 */
-	public abstract int getActiveToolbarId();
-	
-	public abstract String getToolbarDefinition(); 
+	public abstract int getActiveToolbarId();	
 }

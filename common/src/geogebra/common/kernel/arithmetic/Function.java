@@ -623,6 +623,8 @@ public class Function extends FunctionNVar implements RealRootFunction,
 			boolean symbolic,boolean assumeFalseIfCASNeeded) {
 		PolyFunction polyFunNoCas = expandToPolyFunctionNoCas(ev,
 				symbolic);
+		//TODO: make sure expandToPolyFunctionNoCas does not mess with ev instead of the next line
+		initFunction();
 		if(polyFunNoCas!=null || assumeFalseIfCASNeeded)
 			return polyFunNoCas;
 		ExpressionNode node;
@@ -818,6 +820,12 @@ public class Function extends FunctionNVar implements RealRootFunction,
 			 // NB keepFractions ignored, so different answer given for f(x) = 3x^2 / 5, f'(x)
 			 return polyDeriv.getFunction(kernel, getFunctionVariable());
 		}
+		 
+		 if (!kernel.useCASforDerivatives()) {
+			 
+			 return getDerivativeNoCAS(n);
+			 
+		 }
 		
 		// get variable string with tmp prefix,
 		// e.g. "x" becomes "ggbtmpvarx" here
@@ -850,43 +858,19 @@ public class Function extends FunctionNVar implements RealRootFunction,
 	public static Function getDerivativeQuotient(Function funX, Function funY) {
 		if (funX.fVars == null)
 			return null;
+		
+		// use fast non-CAS method
+		Function xDashed = funX.getDerivativeNoCAS(1);
+		Function yDashed = funY.getDerivativeNoCAS(1);
+		
+		FunctionVariable fv = xDashed.getFunctionVariable();
+		
+		// make sure both functions use same variable
+		ExpressionValue yDashedEv = yDashed.getExpression().replace(yDashed.getFunctionVariable(), fv);
+		
+		ExpressionNode en = new ExpressionNode(funX.getKernel(), yDashedEv, Operation.DIVIDE, xDashed.getExpression());
 
-		// get variable string with tmp prefix,
-		// e.g. "t" becomes "ggbtmpvart" here
-
-		String varStr = funX.fVars[0].toString(StringTemplate.prefixedDefault);
-
-		// should we try to get a symbolic derivative?
-		// for multi-variate functions we need to ensure value form,
-		// i.e. f(x,m)=x^2+m, g(x)=f(x,2), Derivative[g] gets sent as
-		// Derivative[x^2+2] instead of Derivative[f(x,2)]
-		// see http://www.geogebra.org/trac/ticket/1466
-		boolean symbolic = !funX.expression.containsGeoFunctionNVar()
-				&& !funY.expression.containsGeoFunctionNVar();
-
-		// build y'(t)/x'(t) string as
-		// "Derivative( <funY>, t ) / Derivative( %, t)"
-		StringBuilder sb = new StringBuilder();
-		// Derivative( y, t )
-		sb.append("Derivative(");
-		sb.append(funY.expression.getCASstring(StringTemplate.prefixedDefault, symbolic));
-		sb.append(",");
-		sb.append(varStr);
-		sb.append(")");
-
-		sb.append("/");
-
-		// "Derivative( %, t )", funX will be substituted for % in
-		// funX.evalCasCommand() later
-		sb.append("Derivative(");
-		sb.append("%");
-		sb.append(",");
-		sb.append(varStr);
-		sb.append(")");
-		String casString = sb.toString();
-
-		// eval cas string "Derivative( <funY>, t ) / Derivative( %, t)"
-		return (Function) funX.evalCasCommand(casString, symbolic,null);
+		return new Function(en, fv);
 	}
 
 	/**
@@ -1021,6 +1005,31 @@ public class Function extends FunctionNVar implements RealRootFunction,
 		GeoFunction gf = new GeoFunction(kernel.getConstruction());
 		gf.setFunction(this);
 		return gf;
+	}
+
+	/**
+	 * @param n order of derivative
+	 * @return derivative calculated without the CAS
+	 */
+	public Function getDerivativeNoCAS(int n) {
+		
+		ExpressionNode expDeriv = expression;
+		
+		for (int i = 0 ; i < n ; i++) {
+			expDeriv = expDeriv.derivative(fVars[0]);
+		}
+		
+		return new Function(expDeriv, fVars[0]);
+	}
+
+	/**
+	 * @param n order of derivative
+	 * @return integral calculated without the CAS
+	 * (will work only for very simple functions eg sin(3x))
+	 */
+	public Function getIntegralNoCAS() {
+		
+		return new Function(expression.integral(fVars[0]), fVars[0]);
 	}
 
 }

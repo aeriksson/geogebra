@@ -26,7 +26,6 @@ import java.util.ArrayList;
 
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.event.dom.client.KeyUpEvent;
 
 /**
  * 
@@ -41,6 +40,7 @@ public class MobileModel
 	private boolean commandFinished = false;
 	private boolean changeColorAllowed = false;
 	private boolean controlClicked = true;
+	private boolean storeOnClose = false; 
 	private ToolBarCommand command;
 	private ArrayList<GeoElement> selectedElements = new ArrayList<GeoElement>();
 
@@ -55,11 +55,21 @@ public class MobileModel
 		return this.guiModel;
 	}
 
+	/**
+	 * 
+	 * @return the command that is actually executed
+	 */
 	public ToolBarCommand getCommand()
 	{
 		return this.command;
 	}
 
+	/**
+	 * sets the command to be executed
+	 * 
+	 * @param cmd
+	 *            the new command
+	 */
 	public void setCommand(ToolBarCommand cmd)
 	{
 		if (this.command != null && this.command.equals(cmd))
@@ -71,16 +81,40 @@ public class MobileModel
 		this.command = cmd;
 	}
 
+	/**
+	 * selects the given element or desects it in case it is selected
+	 * 
+	 * @param geo
+	 *            the element to be selected
+	 */
 	public void select(GeoElement geo)
 	{
-		if (geo == null || this.selectedElements.indexOf(geo) != -1)
+		if (geo == null)
 		{
 			return;
 		}
+
+		if (this.selectedElements.indexOf(geo) != -1)
+		{
+			deselect(geo);
+			return;
+		}
+
 		geo.setSelected(true);
 		this.selectedElements.add(geo);
 	}
 
+	/**
+	 * selects a number of elements of a given type
+	 * 
+	 * @param hits
+	 *            elements that could be selected
+	 * @param geoclass
+	 *            the type of the element that should be selected
+	 * @param max
+	 *            maximum number of elements to be selected
+	 * @return success
+	 */
 	public boolean select(Hits hits, Test geoclass, int max)
 	{
 		boolean success = false;
@@ -106,7 +140,8 @@ public class MobileModel
 	 *            the Hits to get the elements form
 	 * @param geoclass
 	 *            Array of possible classes
-	 * @return success (false if there is no element of any of the given classes
+	 * @return success (false if there is no element of any of the given
+	 *         classes)
 	 */
 	public boolean selectOutOf(Hits hits, Test[] geoclass)
 	{
@@ -123,12 +158,23 @@ public class MobileModel
 		return false;
 	}
 
+	/**
+	 * 
+	 * @param geo
+	 *            the element to be deselected
+	 */
 	public void deselect(GeoElement geo)
 	{
 		geo.setSelected(false);
 		this.selectedElements.remove(geo);
 	}
 
+	/**
+	 * deselects all selected elements of the given type
+	 * 
+	 * @param geoclass
+	 *            type of elements to be deselected
+	 */
 	public void deselectAll(Test geoclass)
 	{
 		for (GeoElement geo : this.selectedElements)
@@ -140,6 +186,9 @@ public class MobileModel
 		}
 	}
 
+	/**
+	 * deselect all elements
+	 */
 	public void resetSelection()
 	{
 		for (GeoElement geo : this.selectedElements)
@@ -149,6 +198,10 @@ public class MobileModel
 		this.selectedElements.clear();
 	}
 
+	/**
+	 * 
+	 * @return all selected elemtents
+	 */
 	public ArrayList<GeoElement> getSelectedGeos()
 	{
 		return this.selectedElements;
@@ -173,6 +226,15 @@ public class MobileModel
 		return null;
 	}
 
+	/**
+	 * 
+	 * @param geoclass
+	 *            type of element looked for
+	 * @param i
+	 *            minimum index of the element
+	 * @return the first element of the given class with an index larger or
+	 *         equal than i; null in case there is no such element
+	 */
 	public GeoElement getElement(Test geoclass, int i)
 	{
 		int count = 0;
@@ -190,6 +252,14 @@ public class MobileModel
 		return null;
 	}
 
+	/**
+	 * 
+	 * @param geoclass
+	 *            array of possible types to be returned
+	 * @return one element of the given classes; if there are matches for two
+	 *         different types the element of the type with the lower index will
+	 *         be returned
+	 */
 	public GeoElement getElementFrom(Test[] geoclass)
 	{
 		for (int i = 0; i < geoclass.length; i++)
@@ -205,6 +275,12 @@ public class MobileModel
 		return null;
 	}
 
+	/**
+	 * 
+	 * @param geoclass
+	 *            type to be returned
+	 * @return all elements of the given type
+	 */
 	public ArrayList<GeoElement> getAll(Test geoclass)
 	{
 		ArrayList<GeoElement> geos = new ArrayList<GeoElement>();
@@ -218,11 +294,21 @@ public class MobileModel
 		return geos;
 	}
 
+	/**
+	 * 
+	 * @return the number of all selected elements
+	 */
 	public int getTotalNumber()
 	{
 		return this.selectedElements.size();
 	}
 
+	/**
+	 * 
+	 * @param geoclass
+	 *            type to be counted
+	 * @return number of selected elements of the given type
+	 */
 	public int getNumberOf(Test geoclass)
 	{
 		int count = 0;
@@ -236,6 +322,11 @@ public class MobileModel
 		return count;
 	}
 
+	/**
+	 * 
+	 * @return the element that was selected last; null in case there is no
+	 *         selected element
+	 */
 	public GeoElement lastSelected()
 	{
 		return this.selectedElements.size() > 0 ? this.selectedElements
@@ -264,6 +355,8 @@ public class MobileModel
 	{
 		this.guiModel.closeOptions();
 
+		this.kernel.setNotifyRepaintActive(false); 
+		
 		boolean draw = false;
 		if (this.commandFinished)
 		{
@@ -282,9 +375,12 @@ public class MobileModel
 			select(hits, Test.GEOPOINT, 1);
 			this.guiModel.appendStyle(this.selectedElements);
 			this.changeColorAllowed = true;
+
+			this.commandFinished = true;
+
 			break;
 
-		// commands that need one point or a point and a Path or a Region
+		// special command: attach/detach: needs a point (detach) or a point and a region/path (attach)
 		case AttachDetachPoint:
 			attachDetach(hits, point);
 			break;
@@ -434,9 +530,13 @@ public class MobileModel
 		case Polygon:
 		case RigidPolygon:
 		case VectorPolygon:
-			select(hits, Test.GEOPOINT, 1);
-			draw = getNumberOf(Test.GEOPOINT) > 2
-					&& hits.indexOf(getElement(Test.GEOPOINT)) != -1;
+			// checking for draw prevents unintended deselecting of the
+			// start-point
+			draw = finishedPolygon(hits);
+			if (!draw)
+			{
+				select(hits, Test.GEOPOINT, 1);
+			}
 			break;
 
 		// special commands
@@ -809,13 +909,25 @@ public class MobileModel
 			this.commandFinished = true;
 		}
 
-		this.kernel.notifyRepaint();
+		this.kernel.setNotifyRepaintActive(true); //includes a repaint
+		//this.kernel.notifyRepaint();
+
+		if (this.commandFinished)
+		{
+			this.kernel.storeUndoInfo();
+		}
 
 		if (this.commandFinished || this.command == ToolBarCommand.Select
 				|| this.command == ToolBarCommand.Move_Mobile)
 		{
 			this.guiModel.updateStylingBar(this);
 		}
+	}
+
+	private boolean finishedPolygon(Hits hits)
+	{
+		return this.selectedElements.size() >= 3
+				&& hits.indexOf(this.selectedElements.get(0)) != -1;
 	}
 
 	public boolean controlClicked()
@@ -833,6 +945,7 @@ public class MobileModel
 		selectOutOf(hits, new Test[] { Test.GEOPOINT, Test.PATH,
 				Test.GEOCONICND, Test.GEOFUNCTION, Test.GEOFUNCTIONNVAR,
 				Test.REGION3D });
+		
 		GeoPoint point = (GeoPoint) getElement(Test.GEOPOINT);
 		Path path = (Path) getElement(Test.PATH);
 		Region region = (Region) getElementFrom(new Test[] { Test.GEOCONICND,
@@ -842,20 +955,20 @@ public class MobileModel
 			Point p = c != null ? c : new Point((int) point.getX(),
 					(int) point.getY());
 
-			if (!point.isIndependent())
+			if (!point.isIndependent()) // detach
 			{
 				this.kernel.getAlgoDispatcher().detach(point, view);
 				resetSelection();
 				select(point);
 				this.commandFinished = true;
-			} else if (region != null)
+			} else if (region != null) // attach to region
 			{
 				this.kernel.getAlgoDispatcher().attach(point, region, view,
 						p.getX(), p.getY());
 				resetSelection();
 				select(point);
 				this.commandFinished = true;
-			} else if (path != null)
+			} else if (path != null) // attach to path
 			{
 				this.kernel.getAlgoDispatcher().attach(point, path, view,
 						p.getX(), p.getY());
@@ -962,4 +1075,26 @@ public class MobileModel
 		return this.commandFinished || this.changeColorAllowed;
 	}
 
+	public void repaint()
+	{
+		this.kernel.notifyRepaint();
+	}
+
+	public void setCaptionMode(int index)
+	{
+		this.guiModel.setCaptionMode(index); 
+		this.guiModel.closeOptions(); 
+		this.kernel.storeUndoInfo(); 
+	}
+
+	public void storeOnClose(){
+		this.storeOnClose = true; 
+	}
+	
+	public void optionsClosed(){
+		if(this.storeOnClose){
+			this.storeOnClose = false; 
+			this.kernel.storeUndoInfo(); 
+		}
+	}
 }

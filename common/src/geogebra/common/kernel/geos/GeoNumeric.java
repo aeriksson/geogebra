@@ -26,12 +26,14 @@ import geogebra.common.kernel.Kernel;
 import geogebra.common.kernel.StringTemplate;
 import geogebra.common.kernel.algos.AlgoElement;
 import geogebra.common.kernel.arithmetic.ExpressionNode;
+import geogebra.common.kernel.arithmetic.ExpressionValue;
 import geogebra.common.kernel.arithmetic.Function;
 import geogebra.common.kernel.arithmetic.FunctionVariable;
 import geogebra.common.kernel.arithmetic.MyDouble;
 import geogebra.common.kernel.arithmetic.NumberValue;
 import geogebra.common.kernel.cas.AlgoIntegralDefiniteInterface;
 import geogebra.common.plugin.GeoClass;
+import geogebra.common.plugin.Operation;
 import geogebra.common.util.StringUtil;
 
 import java.util.ArrayList;
@@ -1316,6 +1318,16 @@ public class GeoNumeric extends GeoElement implements GeoNumberValue,
 	@Override
 	public boolean isPinnable() {
 		return isSlider();
+	}
+	
+	@Override
+	public ExpressionValue derivative(FunctionVariable fv) {
+		return new MyDouble(fv.getKernel(), 0);
+	}
+
+	@Override
+	public ExpressionValue integral(FunctionVariable fv) {
+		return new ExpressionNode(kernel, this, Operation.MULTIPLY, fv);
 	}
 
 

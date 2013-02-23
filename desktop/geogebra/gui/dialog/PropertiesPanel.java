@@ -34,6 +34,7 @@ import geogebra.common.kernel.geos.GeoAngle;
 import geogebra.common.kernel.geos.GeoBoolean;
 import geogebra.common.kernel.geos.GeoConic;
 import geogebra.common.kernel.geos.GeoElement;
+import geogebra.common.kernel.geos.GeoElement.FillType;
 import geogebra.common.kernel.geos.GeoFunctionNVar;
 import geogebra.common.kernel.geos.GeoImage;
 import geogebra.common.kernel.geos.GeoLine;
@@ -56,6 +57,7 @@ import geogebra.common.kernel.kernelND.GeoPointND;
 import geogebra.common.kernel.kernelND.ViewCreator;
 import geogebra.common.main.App;
 import geogebra.common.main.GeoGebraColorConstants;
+import geogebra.common.main.Localization;
 import geogebra.common.plugin.EuclidianStyleConstants;
 import geogebra.common.plugin.GeoClass;
 import geogebra.common.util.StringUtil;
@@ -141,6 +143,7 @@ public class PropertiesPanel extends JPanel implements SetLabels, UpdateFonts {
 	private static final int MAX_COMBOBOX_ENTRIES = 200;
 
 	AppD app;
+	Localization loc;
 	private Kernel kernel;
 	private GeoGebraColorChooser colChooser;
 
@@ -229,6 +232,7 @@ public class PropertiesPanel extends JPanel implements SetLabels, UpdateFonts {
 		this.isDefaults = isDefaults;
 
 		this.app = app;
+		this.loc = app.getLocalization();
 		this.kernel = app.getKernel();
 		this.colChooser = colChooser;
 
@@ -2755,13 +2759,13 @@ public class PropertiesPanel extends JPanel implements SetLabels, UpdateFonts {
 			if (hasOrientation) {
 				for (int i = 0; i < GeoAngle.INTERVAL_MIN.length; i++)
 					intervalCombo
-							.addItem(app.getPlain("AandB",
+							.addItem(loc.getPlain("AandB",
 									GeoAngle.INTERVAL_MIN[i],
 									GeoAngle.INTERVAL_MAX[i]));
 			} else {// only 180° wide interval are possible
-				intervalCombo.addItem(app.getPlain("AandB",
+				intervalCombo.addItem(loc.getPlain("AandB",
 						GeoAngle.INTERVAL_MIN[1], GeoAngle.INTERVAL_MAX[1]));
-				intervalCombo.addItem(app.getPlain("AandB",
+				intervalCombo.addItem(loc.getPlain("AandB",
 						GeoAngle.INTERVAL_MIN[2], GeoAngle.INTERVAL_MAX[2]));
 			}
 			intervalCombo.addActionListener(this);
@@ -4481,7 +4485,7 @@ public class PropertiesPanel extends JPanel implements SetLabels, UpdateFonts {
 
 			// decimal places
 			ComboBoxRenderer renderer = new ComboBoxRenderer();
-			cbDecimalPlaces = new JComboBox(app.getRoundingMenu());
+			cbDecimalPlaces = new JComboBox(loc.getRoundingMenu());
 			cbDecimalPlaces.setRenderer(renderer);
 			cbDecimalPlaces.addActionListener(this);
 
@@ -4512,7 +4516,7 @@ public class PropertiesPanel extends JPanel implements SetLabels, UpdateFonts {
 		}
 
 		public void setLabels() {
-			String[] fontSizes = app.getFontSizeStrings();
+			String[] fontSizes = app.getLocalization().getFontSizeStrings();
 
 			int selectedIndex = cbSize.getSelectedIndex();
 			cbSize.removeActionListener(this);
@@ -5242,7 +5246,12 @@ public class PropertiesPanel extends JPanel implements SetLabels, UpdateFonts {
 
 			cbFillType.addItem(app.getMenu("Filling.Standard")); // index 0
 			cbFillType.addItem(app.getMenu("Filling.Hatch")); // index 1
-			cbFillType.addItem(app.getMenu("Filling.Image")); // index 2
+			cbFillType.addItem(app.getMenu("Filling.Crosshatch")); // index 2
+			cbFillType.addItem(app.getMenu("Filling.Chessboard")); // index 3
+			cbFillType.addItem(app.getMenu("Filling.Dotted")); // index 4
+			cbFillType.addItem(app.getMenu("Filling.Honeycomb"));//index 5
+			cbFillType.addItem(app.getMenu("Filling.Brick"));//index 6
+			cbFillType.addItem(app.getMenu("Filling.Image")); // index 7
 
 			cbFillType.setSelectedIndex(selectedIndex);
 			cbFillType.addActionListener(this);
@@ -5306,23 +5315,50 @@ public class PropertiesPanel extends JPanel implements SetLabels, UpdateFonts {
 			return imagePanel;
 		}
 
-		private void updateFillTypePanel(int fillType) {
+		private void updateFillTypePanel(FillType fillType) {
 
 			switch (fillType) {
 
-			case GeoElement.FILL_STANDARD:
+			case STANDARD:
 				transparencyPanel.setVisible(false);
 				hatchFillPanel.setVisible(false);
 				imagePanel.setVisible(false);
 				break;
-
-			case GeoElement.FILL_HATCH:
+			case HATCH:
 				transparencyPanel.setVisible(false);
 				hatchFillPanel.setVisible(true);
 				imagePanel.setVisible(false);
+				anglePanel.setVisible(true);
+				angleSlider.setMaximum(180);
+				angleSlider.setMinorTickSpacing(5);
 				break;
-
-			case GeoElement.FILL_IMAGE:
+			case CROSSHATCHED:
+			case CHESSBOARD:
+				transparencyPanel.setVisible(false);
+				hatchFillPanel.setVisible(true);
+				imagePanel.setVisible(false);
+				anglePanel.setVisible(true);
+				// Only at 0, 45 and 90 degrees texturepaint not have mismatches
+				angleSlider.setMaximum(45);
+				angleSlider.setMinorTickSpacing(45);
+				break;	
+			case BRICK:
+				transparencyPanel.setVisible(false);
+				hatchFillPanel.setVisible(true);
+				imagePanel.setVisible(false);
+				anglePanel.setVisible(true);
+				angleSlider.setMaximum(90);
+				angleSlider.setMinorTickSpacing(90);
+				break;
+			case HONEYCOMB:
+			case DOTTED:
+				transparencyPanel.setVisible(false);
+				hatchFillPanel.setVisible(true);
+				imagePanel.setVisible(false);
+				// for dotted angle is useless
+				anglePanel.setVisible(false);
+				break;
+			case IMAGE:
 				transparencyPanel.setVisible(true);
 				hatchFillPanel.setVisible(false);
 				imagePanel.setVisible(true);
@@ -5340,6 +5376,7 @@ public class PropertiesPanel extends JPanel implements SetLabels, UpdateFonts {
 			}
 		}
 
+
 		public JPanel update(Object[] geos) {
 			// check geos
 			if (!checkGeos(geos))
@@ -5347,7 +5384,7 @@ public class PropertiesPanel extends JPanel implements SetLabels, UpdateFonts {
 
 			cbFillType.removeActionListener(this);
 			// set selected fill type to first geo's fill type
-			cbFillType.setSelectedIndex(((GeoElement) geos[0]).getFillType());
+			cbFillType.setSelectedIndex(((GeoElement) geos[0]).getFillType().ordinal());
 			cbFillType.addActionListener(this);
 
 			cbFillInverse.removeActionListener(this);
@@ -5451,10 +5488,10 @@ public class PropertiesPanel extends JPanel implements SetLabels, UpdateFonts {
 			// handle change in fill type
 			if (source == cbFillType) {
 
-				int fillType = cbFillType.getSelectedIndex();
-
+				FillType fillType = FillType.values()[cbFillType.getSelectedIndex()];
+				System.out.println(""+fillType);
 				// set selected image to first geo image
-				if (fillType == GeoElement.FILL_IMAGE
+				if (fillType == FillType.IMAGE
 						&& ((GeoElement) geos[0]).getFillImage() != null) {
 					btnImage.setSelectedIndex(this.imgFileNameList
 							.lastIndexOf(((GeoElement) geos[0])
@@ -7252,9 +7289,11 @@ class NamePanel extends JPanel implements ActionListener, FocusListener,
 	private RedefineInputHandler defInputHandler;
 	private GeoElement currentGeo;
 	private AppD app;
+	private Localization loc;
 
 	public NamePanel(AppD app) {
 		this.app = app;
+		this.loc = app.getLocalization();
 		// NAME PANEL
 		nameInputHandler = new RenameInputHandler(app, null, false);
 
@@ -7302,16 +7341,16 @@ class NamePanel extends JPanel implements ActionListener, FocusListener,
 	}
 
 	public void setLabels() {
-		nameLabel.setText(app.getPlain("Name") + ":");
-		defLabel.setText(app.getPlain("Definition") + ":");
-		captionLabel.setText(app.getMenu("Button.Caption") + ":");
+		nameLabel.setText(loc.getPlain("Name") + ":");
+		defLabel.setText(loc.getPlain("Definition") + ":");
+		captionLabel.setText(loc.getMenu("Button.Caption") + ":");
 	}
 
 	private void updateGUI(boolean showDefinition, boolean showCaption) {
 		int rows = 1;
 		removeAll();
 		
-		if (app.isRightToLeftReadingOrder()){
+		if (loc.isRightToLeftReadingOrder()){
 			add(inputPanelName);
 			add(nameLabel);			
 		}else{
@@ -7321,7 +7360,7 @@ class NamePanel extends JPanel implements ActionListener, FocusListener,
 
 		if (showDefinition) {
 			rows++;
-			if (app.isRightToLeftReadingOrder()){				
+			if (loc.isRightToLeftReadingOrder()){				
 				add(inputPanelDef);	
 				add(defLabel);
 			}else{
@@ -7332,7 +7371,7 @@ class NamePanel extends JPanel implements ActionListener, FocusListener,
 
 		if (showCaption) {
 			rows++;
-			if (app.isRightToLeftReadingOrder()){	
+			if (loc.isRightToLeftReadingOrder()){	
 				add(inputPanelCap);
 				add(captionLabel);				
 			}else{
