@@ -1,4 +1,4 @@
-package geogebra3D.euclidian3D;
+package geogebra3D.euclidian3D.intersections;
 
 import geogebra.common.kernel.arithmetic.FunctionalNVar;
 

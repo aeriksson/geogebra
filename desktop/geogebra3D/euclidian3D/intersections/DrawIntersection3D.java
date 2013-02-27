@@ -1,5 +1,8 @@
-package geogebra3D.euclidian3D;
+package geogebra3D.euclidian3D.intersections;
 
+import geogebra3D.euclidian3D.Drawable3DCurves;
+import geogebra3D.euclidian3D.EuclidianView3D;
+import geogebra3D.euclidian3D.SurfaceTriList;
 import geogebra3D.euclidian3D.opengl.Renderer;
 import geogebra3D.euclidian3D.plots.CurveTriangleList;
 

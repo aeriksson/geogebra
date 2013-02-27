@@ -1,4 +1,4 @@
-package geogebra3D.euclidian3D;
+package geogebra3D.euclidian3D.intersections;
 
 /**
  * Interface for 3D objects that are sorted as octrees.
