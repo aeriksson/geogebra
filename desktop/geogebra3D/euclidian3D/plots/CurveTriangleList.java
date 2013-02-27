@@ -231,8 +231,6 @@ public class CurveTriangleList extends TriangleList {
 
 /**
  * A class corresponding to an element in a CurveTriList
- * 
- * @author andre
  */
 class CurveTriListElem extends TriangleListElement {
 

@@ -8,8 +8,6 @@ import geogebra3D.euclidian3D.plots.TriangleListElement;
 
 /**
  * An element in a CurveMesh.
- * 
- * @author André Eriksson
  */
 class SurfaceDiamond2 extends DynamicMeshElement2 {
 	// MISC

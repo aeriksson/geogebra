@@ -3,8 +3,6 @@ package geogebra3D.euclidian3D.plots;
 /**
  * An interface used in BucketPQ to assign elements to buckets
  * 
- * @author André Eriksson
- * 
  * @param <ET>
  */
 public interface BucketAssigner<ET> {

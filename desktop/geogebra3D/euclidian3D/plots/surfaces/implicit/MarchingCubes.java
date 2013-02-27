@@ -16,8 +16,6 @@ import java.util.ListIterator;
 
 /**
  * An element in MarchingCubes.
- * 
- * @author André Eriksson
  */
 class MCElement {
 
@@ -130,7 +128,6 @@ class MCElement {
 
 /**
  * A triangle in the marching cubes implementation
- * @author André Eriksson
  */
 class MCTriangle extends DynamicMeshElement2 {
 	
@@ -364,8 +361,6 @@ class MCTriangle extends DynamicMeshElement2 {
 
 /**
  * Triangle list used for MC
- * 
- * @author André Eriksson
  */
 class MCTriList extends TriangleList {
 
@@ -3278,10 +3273,6 @@ class MCAssigner implements BucketAssigner<DynamicMeshElement2> {
 	}
 }
 
-/**
- * 
- * @author André Eriksson
- */
 class MCROAM {
 	private MCTriList triList;
 	private FastBucketPriorityQueue pSplit = new FastBucketPriorityQueue(new MCAssigner(), false);
@@ -3482,7 +3473,6 @@ class MCROAM {
 
 /**
  * A variant of the Marching Cubes algorithm
- * @author André Eriksson 
  */
 public class MarchingCubes {
 	private int INITIAL_ELEMENTS = 2;

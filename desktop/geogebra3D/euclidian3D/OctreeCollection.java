@@ -2,8 +2,6 @@ package geogebra3D.euclidian3D;
 
 /**
  * Interface for 3D objects that are sorted as octrees.
- * 
- * @author André Eriksson
  */
 public interface OctreeCollection {
 

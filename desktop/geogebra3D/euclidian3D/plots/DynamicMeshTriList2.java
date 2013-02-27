@@ -4,8 +4,6 @@ import java.nio.FloatBuffer;
 
 /**
  * A triangle list for dynamic meshes
- * 
- * @author André Eriksson
  */
 public interface DynamicMeshTriList2 {
 

@@ -2,8 +2,6 @@ package geogebra3D.euclidian3D.plots;
 
 /**
  * An enumeration for describing the culling status of a diamond
- * 
- * @author André Eriksson
  */
 public enum CullInfo2 {
 	/** the entire diamond is in the viewing sphere */

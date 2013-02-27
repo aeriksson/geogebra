@@ -6,8 +6,6 @@ import geogebra3D.euclidian3D.plots.DynamicMeshElement2;
 /**
  * A bucket assigner used for split operations. Sorts based on
  * SurfaceMeshDiamond.error.
- * 
- * @author André Eriksson
  */
 class SurfaceSplitBucketAssigner2 implements
 		BucketAssigner<DynamicMeshElement2> {

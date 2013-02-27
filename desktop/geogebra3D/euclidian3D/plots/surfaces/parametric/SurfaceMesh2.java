@@ -22,8 +22,6 @@ import java.util.LinkedList;
 
 /**
  * Mesh representing a function R^2->R^3
- * 
- * @author André Eriksson
  */
 public class SurfaceMesh2 extends DynamicMesh2 implements OctreeCollection {
 
@@ -281,8 +279,6 @@ public class SurfaceMesh2 extends DynamicMesh2 implements OctreeCollection {
 
 /**
  * Triangle list used for curves
- * 
- * @author André Eriksson
  */
 class SurfaceTriList2 extends TriangleList implements DynamicMeshTriList2 {
 

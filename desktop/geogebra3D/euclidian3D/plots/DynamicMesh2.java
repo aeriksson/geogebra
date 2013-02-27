@@ -8,8 +8,6 @@ import java.util.Date;
  * Refines the mesh based on two priority queues sorted by a user-defined error
  * measure. One priority queue handles merge operations and another handles
  * split operations.
- * 
- * @author André Eriksson
  */
 public abstract class DynamicMesh2 {
 

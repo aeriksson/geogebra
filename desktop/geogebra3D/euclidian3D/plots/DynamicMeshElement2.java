@@ -2,8 +2,6 @@ package geogebra3D.euclidian3D.plots;
 
 /**
  * Abstract class representing an element to be used in a dynamic mesh.
- * 
- * @author André Eriksson
  */
 public abstract class DynamicMeshElement2 {
 	private boolean isSplit;
