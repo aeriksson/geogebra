@@ -12,8 +12,6 @@ import java.util.LinkedList;
 
 /**
  * An element in a CurveMesh.
- * 
- * @author André Eriksson
  */
 class CurveSegment extends DynamicMeshElement2 {
 
@@ -530,8 +528,6 @@ class CurveSegment extends DynamicMeshElement2 {
 
 /**
  * Triangle list used for curves
- * 
- * @author André Eriksson
  */
 class CurveMeshTriList extends CurveTriList implements DynamicMeshTriList2 {
 
@@ -693,8 +689,6 @@ class CurveMeshTriList extends CurveTriList implements DynamicMeshTriList2 {
 /**
  * A bucket assigner used for split operations. Sorts based on
  * SurfaceMeshDiamond.error.
- * 
- * @author André Eriksson
  */
 class CurveSplitBucketAssigner implements BucketAssigner<DynamicMeshElement2> {
 
@@ -711,7 +705,7 @@ class CurveSplitBucketAssigner implements BucketAssigner<DynamicMeshElement2> {
 }
 
 /**
- * @author André Eriksson Tree representing a parametric curve
+ * Tree representing a parametric curve
  */
 public class CurveMesh extends DynamicMesh2 {
 
@@ -725,10 +719,10 @@ public class CurveMesh extends DynamicMesh2 {
 
 	/** the amount of vertices at the end of each segment */
 	static public final int nVerts = 4;
-
-	/** relative radius of the segments */
-	static public final float radiusFac = 0.1f;
-
+	
+	/** proportionality constant for curve width */
+	private float curveWidthFactor = 1.0f;
+	
 	// DETAIL SETTINGS
 	private double maxErrorCoeff = 0.02;
 
@@ -895,6 +889,25 @@ public class CurveMesh extends DynamicMesh2 {
 	public double getLevelOfDetail() {
 		return levelOfDetail;
 	}
+	
+	/**
+	 * Sets the constant that regulates curve width.
+	 * 
+	 * @param width The new value. Must be greater than zero.
+	 */
+	public void setCurveWidthFactor(float width) {
+		if (width < 0)
+			throw new RuntimeException();
+
+		curveWidthFactor = width;
+	}
+
+	/**
+	 * @return The constant that regulates curve width.
+	 */
+	public float getCurveWidthFactor() {
+		return curveWidthFactor;
+	}
 
 	@Override
 	protected void updateCullingInfo() {
@@ -939,7 +952,7 @@ public class CurveMesh extends DynamicMesh2 {
 	 *            the desired scale
 	 */
 	public void updateScale(float scale) {
-		((CurveTriList) drawList).rescale(scale * scalingFactor);
+		((CurveTriList) drawList).rescale(scale * scalingFactor / curveWidthFactor);
 	}
 
 	@Override

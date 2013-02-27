@@ -116,6 +116,24 @@ public class DrawCurve3D extends Drawable3DCurves {
 		mesh.updateScale((float) view.getScale());
 	}
 
+	/** 
+	 * Get the curve width factor, i.e. a constant proportional to the
+	 * curve thickness.
+	 * * @return The current curve width factor of the mesh.
+	 **/
+	public float getCurveWidthFactor() {
+		return mesh.getCurveWidthFactor();
+	}
+	
+	/**
+	 * Set the curve width factor, i.e. a constant proportional to the
+	 * curve thickness.
+	 * @param value The desired curve width factor value for the mesh.
+	 */
+	public void setCurveWidthFactor(float value) {
+		mesh.setCurveWidthFactor(value);
+	}
+
 	@Override
 	public int getPickOrder() {
 		return DRAW_PICK_ORDER_1D;
