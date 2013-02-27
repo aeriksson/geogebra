@@ -1,24 +1,22 @@
-package geogebra3D.euclidian3D;
+package geogebra3D.euclidian3D.plots;
 
 import geogebra.common.kernel.Matrix.Coords;
-import geogebra3D.euclidian3D.plots.CurveMesh;
+import geogebra3D.euclidian3D.plots.curves.CurveMesh;
 
 /**
- * A triangle list for handling collections of segments
- * 
- * @author andre
+ * A triangle list for handling collections of segments.
  */
-public class CurveTriList extends TriList {
+public class CurveTriangleList extends TriangleList {
 
 	/** the most recently set scale */
 	private float currScale;
 
 	/** number of vertices to place around each end of a segment */
-	private static final short nVerts = 4;
+	private static final short VERTICES_PER_POINT = 4;
 
 	/** values precomputed to speed up calculations */
-	private static final float[] cosines = new float[nVerts];
-	private static final float[] sines = new float[nVerts];
+	private static final float[] cosines = new float[VERTICES_PER_POINT];
+	private static final float[] sines = new float[VERTICES_PER_POINT];
 	private static boolean initialized = false;
 
 	/**
@@ -29,14 +27,14 @@ public class CurveTriList extends TriList {
 	 * @param scale
 	 *            the scale for the segment
 	 */
-	public CurveTriList(int capacity, int marigin, float scale) {
-		super(capacity, marigin, (nVerts + 1) * 2 * 3, true);
+	public CurveTriangleList(int capacity, int marigin, float scale) {
+		super(capacity, marigin, (VERTICES_PER_POINT + 1) * 2 * 3, true);
 		currScale = scale;
 
 		if (!initialized) {
 			// generate sines and cosines
-			double fac = 2 * Math.PI / nVerts;
-			for (int i = 0; i < nVerts; i++) {
+			double fac = 2 * Math.PI / VERTICES_PER_POINT;
+			for (int i = 0; i < VERTICES_PER_POINT; i++) {
 				cosines[i] = (float) Math.cos(i * fac);
 				sines[i] = (float) Math.sin(i * fac);
 			}
@@ -56,9 +54,9 @@ public class CurveTriList extends TriList {
 	 * 
 	 * @return a CurveTriListElem for the segment
 	 */
-	public TriListElem add(float[] v0, float[] v1, boolean visible) {
+	public TriangleListElement add(float[] v0, float[] v1, boolean visible) {
 
-		CurveTriListElem elem = new CurveTriListElem(v0, v1, nVerts, cosines,
+		CurveTriListElem elem = new CurveTriListElem(v0, v1, VERTICES_PER_POINT, cosines,
 				sines);
 
 		float[] vertices = calcVertices(elem);
@@ -67,7 +65,7 @@ public class CurveTriList extends TriList {
 		add(elem, vertices, normals);
 
 		if (!visible)
-			hide(elem);
+			hideTriangle(elem);
 
 		return elem;
 	}
@@ -84,9 +82,9 @@ public class CurveTriList extends TriList {
 	 * 
 	 * @return a CurveTriListElem for the segment
 	 */
-	public TriListElem add(float[] v0, float[] v1, float[] t0, float[] t1, boolean visible) {
+	public TriangleListElement add(float[] v0, float[] v1, float[] t0, float[] t1, boolean visible) {
 
-		CurveTriListElem elem = new CurveTriListElem(v0, v1, t0, t1, nVerts, cosines,
+		CurveTriListElem elem = new CurveTriListElem(v0, v1, t0, t1, VERTICES_PER_POINT, cosines,
 				sines);
 
 		float[] vertices = calcVertices(elem);
@@ -95,12 +93,12 @@ public class CurveTriList extends TriList {
 		add(elem, vertices, normals);
 
 		if (!visible)
-			hide(elem);
+			hideTriangle(elem);
 
 		return elem;
 	}
 	
-	public TriListElem add(Coords v0, Coords v1, Coords t0, Coords t1, boolean visible) {
+	public TriangleListElement add(Coords v0, Coords v1, Coords t0, Coords t1, boolean visible) {
 		
 		float[] v0v = new float[]{(float)v0.getX(),(float)v0.getY(),(float)v0.getZ()};
 		float[] v1v = new float[]{(float)v1.getX(),(float)v1.getY(),(float)v1.getZ()};
@@ -119,15 +117,15 @@ public class CurveTriList extends TriList {
 	 * 
 	 * @return a CurveTriListElem for the segment
 	 */
-	public TriListElem add(float[][] v, boolean visible) {
+	public TriangleListElement add(float[][] v, boolean visible) {
 		return add(v[0], v[1], visible);
 	}
 	
-	public TriListElem add(float[] v, boolean visible) {
+	public TriangleListElement add(float[] v, boolean visible) {
 		return add(new float[]{v[0],v[1],v[2]}, new float[]{v[3],v[4],v[5]}, visible);
 	}
 	
-	public TriListElem add(float[][] v, float[][] t, boolean visible) {
+	public TriangleListElement add(float[][] v, float[][] t, boolean visible) {
 		return add(v[0], v[1], t[0], t[1], visible);
 	}
 
@@ -138,7 +136,7 @@ public class CurveTriList extends TriList {
 	 * @return a set of 2*(nVerts+1) vertices corresponding to a triangle strip
 	 */
 	private float[] calcVertices(CurveTriListElem e) {
-		float[] v = new float[2 * (nVerts + 1) * 3];
+		float[] v = new float[2 * (VERTICES_PER_POINT + 1) * 3];
 
 		float[] v0 = e.v0;
 		float[] v1 = e.v1;
@@ -146,8 +144,8 @@ public class CurveTriList extends TriList {
 		float sf = 1 / currScale;
 		float inv = 1 - sf;
 
-		for (int i = 0; i <= nVerts; i++) {
-			int j = i % nVerts;
+		for (int i = 0; i <= VERTICES_PER_POINT; i++) {
+			int j = i % VERTICES_PER_POINT;
 			int k = i * 6;
 
 			v[k] = e.pts[1][j][0];
@@ -178,10 +176,10 @@ public class CurveTriList extends TriList {
 	 * @return
 	 */
 	private float[] calcNormals(CurveTriListElem e) {
-		float[] normals = new float[2 * (nVerts + 1) * 3];
+		float[] normals = new float[2 * (VERTICES_PER_POINT + 1) * 3];
 
-		for (int i = 0; i <= nVerts; i++) {
-			int j = i % nVerts;
+		for (int i = 0; i <= VERTICES_PER_POINT; i++) {
+			int j = i % VERTICES_PER_POINT;
 			int k = i * 6;
 
 			normals[k] = e.nrms[1][j][0];
@@ -212,7 +210,7 @@ public class CurveTriList extends TriList {
 			float sf = t.scale / newScale; // scale factor
 			float inv = 1 - sf;
 
-			for (int i = 0; i <= nVerts; i++) {
+			for (int i = 0; i <= VERTICES_PER_POINT; i++) {
 				int k = i * 6;
 
 				v[k] = v[k] * sf + v1[0] * inv;
@@ -236,7 +234,7 @@ public class CurveTriList extends TriList {
  * 
  * @author andre
  */
-class CurveTriListElem extends TriListElem {
+class CurveTriListElem extends TriangleListElement {
 
 	/** The vertices and curve normals at the segment endpoints */
 	float[] v0, v1, t0, t1;
@@ -319,7 +317,7 @@ class CurveTriListElem extends TriListElem {
 		Coords[] v = t.completeOrthonormal();
 
 		// create midpoints
-		for (int j = 0; j < CurveMesh.nVerts; j++) {
+		for (int j = 0; j < CurveMesh.VERTICES_PER_POINT; j++) {
 			Coords point = c.add(v[0].mul(cosines[j])).add(v[1].mul(sines[j]));
 			Coords normal = point.sub(c).normalized();
 

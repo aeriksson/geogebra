@@ -3,8 +3,8 @@ package geogebra3D.euclidian3D.opengl;
 import geogebra.common.kernel.Matrix.Coords;
 import geogebra.common.kernel.arithmetic.Functional2Var;
 import geogebra.common.kernel.geos.GeoFunctionNVar;
-import geogebra3D.euclidian3D.plots.MarchingCubes;
-import geogebra3D.euclidian3D.plots.SurfaceMesh2;
+import geogebra3D.euclidian3D.plots.surfaces.implicit.MarchingCubes;
+import geogebra3D.euclidian3D.plots.surfaces.parametric.SurfaceMesh2;
 
 import java.nio.FloatBuffer;
 

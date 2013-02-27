@@ -1,14 +1,11 @@
-package geogebra3D.euclidian3D.plots;
-
-import geogebra.common.kernel.Matrix.Coords;
-import geogebra3D.euclidian3D.BucketAssigner;
-import geogebra3D.euclidian3D.CurveTriList;
-import geogebra3D.euclidian3D.TriListElem;
-import geogebra3D.kernel3D.GeoCurveCartesian3D;
+package geogebra3D.euclidian3D.plots.curves;
 
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
+
+import geogebra.common.kernel.Matrix.Coords;
+import geogebra3D.euclidian3D.plots.DynamicMeshElement2;
+import geogebra3D.euclidian3D.plots.TriangleListElement;
+import geogebra3D.kernel3D.GeoCurveCartesian3D;
 
 /**
  * An element in a CurveMesh.
@@ -21,7 +18,7 @@ class CurveSegment extends DynamicMeshElement2 {
 	/** length of the segment */
 	double length;
 
-	private float scale;
+	private float currentScaleFactor;
 
 	/** parameter values at the start, middle and end of the segment */
 	double param;
@@ -36,7 +33,7 @@ class CurveSegment extends DynamicMeshElement2 {
 	public Coords deriv;
 
 	/** triangle list element */
-	public TriListElem triListElem;
+	public TriangleListElement triListElem;
 
 	// we keep a linked list of visible elements in order to avoid drastically
 	// changing level of detail
@@ -149,12 +146,12 @@ class CurveSegment extends DynamicMeshElement2 {
 				if (!f.isFinite() || !f.isDefined()) {
 					f = calcVertex(u - d);
 					param = u-d;
-					der = f.sub(calcVertex(u - d - CurveMesh.deltaParam)).mul(CurveMesh.invDeltaParam);
+					der = f.sub(calcVertex(u - d - CurveMesh.TANGENT_APPROXIMATION_DELTA)).mul(1/CurveMesh.TANGENT_APPROXIMATION_DELTA);
 				} else {
-					der = calcVertex(u + d + CurveMesh.deltaParam).sub(f).mul(CurveMesh.invDeltaParam);
+					der = calcVertex(u + d + CurveMesh.TANGENT_APPROXIMATION_DELTA).sub(f).mul(1/CurveMesh.TANGENT_APPROXIMATION_DELTA);
 				}
 			} else {
-				der = calcVertex(u + CurveMesh.deltaParam).sub(f).mul(CurveMesh.invDeltaParam);
+				der = calcVertex(u + CurveMesh.TANGENT_APPROXIMATION_DELTA).sub(f).mul(1/CurveMesh.TANGENT_APPROXIMATION_DELTA);
 			}
 			
 			//perform discontinuity check
@@ -213,7 +210,7 @@ class CurveSegment extends DynamicMeshElement2 {
 					tll = f.sub(lo);
 					trr = hi.sub(f);
 					
-					der = calcVertex(ui + CurveMesh.deltaParam).sub(f).mul(CurveMesh.invDeltaParam);
+					der = calcVertex(ui + CurveMesh.TANGENT_APPROXIMATION_DELTA).sub(f).mul(1/CurveMesh.TANGENT_APPROXIMATION_DELTA);
 					
 					expl = der.add(loder).mul(0.5*(ui-lop)); // projected difference left
 					expr = der.add(hider).mul(0.5*(hip-ui)); // projected difference right
@@ -272,8 +269,9 @@ class CurveSegment extends DynamicMeshElement2 {
 	private Coords calcVertex(double u) {
 		final CurveMesh m = (CurveMesh) mesh;
 		final GeoCurveCartesian3D curve = m.curve;
-		if(m.precalcVertices.containsKey(u))
-			return m.precalcVertices.get(u);
+		HashMap<Double, Coords> vertexPositions = m.getSegmentVertexPositions();
+		if(vertexPositions.containsKey(u))
+			return vertexPositions.get(u);
 
 		Coords f = curve.evaluateCurve(u);
 
@@ -285,8 +283,24 @@ class CurveSegment extends DynamicMeshElement2 {
 				f = curve.evaluateCurve(u - d);
 			}
 		}
-		m.precalcVertices.put(u, f);
+		vertexPositions.put(u, f);
 		return f;
+	}
+	
+	void performMerge() {
+		CurveSegment c1 = (CurveSegment) children[0];
+		CurveSegment c2 = (CurveSegment) children[1];
+		CurveSegment left = c1.prevInList;
+		CurveSegment right = c2.nextInList;
+
+		c1.prevInList = c1.nextInList = c2.prevInList = c2.nextInList = null;
+
+		prevInList = left;
+		nextInList = right;
+		if (left != null)
+			left.nextInList = this;
+		if (right != null)
+			right.prevInList = this;
 	}
 	
 	Coords getVertex(final int i) {
@@ -415,7 +429,7 @@ class CurveSegment extends DynamicMeshElement2 {
 		// alternative error measure for singular segments
 		if (isSingular) {
 			if(p0v.isDefined() || vertex.isDefined() || p1v.isDefined())
-				error = CurveMesh.undefErrorConst * length;
+				error = CurveMesh.UNDEFINED_SEGMENT_ERROR_DENSITY * length;
 			else
 				error = 0;
 		}
@@ -433,13 +447,13 @@ class CurveSegment extends DynamicMeshElement2 {
 	private Coords approxDeriv(double param, Coords v) {
 		
 		//forwards difference quotient 
-		Coords d = calcVertex(param + CurveMesh.deltaParam);
-		d = d.sub(v).mul(CurveMesh.invDeltaParam);
+		Coords d = calcVertex(param + CurveMesh.TANGENT_APPROXIMATION_DELTA);
+		d = d.sub(v).mul(1 / CurveMesh.TANGENT_APPROXIMATION_DELTA);
 		
 		if(!d.isDefined()) {
 			//backwards difference quotient
-			d = calcVertex(param - CurveMesh.deltaParam);
-			d = v.sub(d).mul(CurveMesh.invDeltaParam);
+			d = calcVertex(param - CurveMesh.TANGENT_APPROXIMATION_DELTA);
+			d = v.sub(d).mul(1 / CurveMesh.TANGENT_APPROXIMATION_DELTA);
 		}
 		
 		return d;
@@ -480,7 +494,7 @@ class CurveSegment extends DynamicMeshElement2 {
 	}
 
 	@Override
-	protected double getError() {
+	public double getError() {
 		return error;
 	}
 
@@ -491,14 +505,14 @@ class CurveSegment extends DynamicMeshElement2 {
 	 *            the scale to use
 	 */
 	public void setScale(float newScale) {
-		scale = newScale;
+		currentScaleFactor = newScale;
 	}
 
 	/**
 	 * @return the scale last associated with the segment
 	 */
 	public float getScale() {
-		return scale;
+		return currentScaleFactor;
 	}
 
 	@Override
@@ -523,441 +537,5 @@ class CurveSegment extends DynamicMeshElement2 {
 		}
 
 		return true;
-	}
-}
-
-/**
- * Triangle list used for curves
- */
-class CurveMeshTriList extends CurveTriList implements DynamicMeshTriList2 {
-
-	private int currentVersion;
-
-	/**
-	 * @param capacity
-	 *            the goal amount of triangles available
-	 * @param marigin
-	 *            extra triangle amount
-	 * @param scale
-	 *            the scale for the segment
-	 */
-	CurveMeshTriList(int capacity, int marigin, float scale) {
-		super(capacity, marigin, scale);
-	}
-
-	/**
-	 * Adds a segment to the curve. If the segment vertices are unspecified,
-	 * these are created.
-	 * 
-	 * @param t
-	 *            the segment to add
-	 */
-	public void add(DynamicMeshElement2 t) {
-		CurveSegment s = (CurveSegment) t;
-
-		if (s.isSingular()) {
-			// create an empty TriListElem to show that
-			// the element has been 'added' to the list
-
-			s.triListElem = new TriListElem();
-			s.triListElem.setOwner(s);
-			s.triListElem.setIndex(1);
-
-			if (s.cullInfo == CullInfo2.OUT)
-				hide(s);
-
-			return;
-		}
-
-		TriListElem lm = add(s, s.cullInfo != CullInfo2.OUT);
-
-		s.triListElem = lm;
-		lm.setOwner(s);
-
-		return;
-	}
-
-	/**
-	 * Removes a segment if it is part of the curve.
-	 * 
-	 * @param t
-	 *            the segment to remove
-	 * @return true if the segment was removed, false if it wasn't in the curve
-	 *         in the first place
-	 */
-	public boolean remove(DynamicMeshElement2 t) {
-		CurveSegment s = (CurveSegment) t;
-
-		boolean ret = hide(s);
-
-		// free triangle
-		s.triListElem = null;
-		return ret;
-	}
-
-	public boolean hide(DynamicMeshElement2 t) {
-		CurveSegment s = (CurveSegment) t;
-
-		if (s.isSingular() && s.triListElem != null
-				&& s.triListElem.getIndex() != -1) {
-			s.triListElem.setIndex(-1);
-			return true;
-		} else if (hide(s.triListElem)) {
-			return true;
-		}
-
-		return false;
-	}
-
-	public boolean show(DynamicMeshElement2 t) {
-		CurveSegment s = (CurveSegment) t;
-
-		reinsert(s, currentVersion);
-
-		if (s.isSingular() && s.triListElem != null
-				&& s.triListElem.getIndex() == -1) {
-			s.triListElem.setIndex(1);
-			return true;
-		} else if (show(s.triListElem)) {
-			return true;
-		}
-
-		return false;
-	}
-
-	public void reinsert(DynamicMeshElement2 a, int currentVersion) {
-
-		CurveSegment s = (CurveSegment) a;
-
-		s.recalculate(currentVersion, true);
-
-		if (s.updateInDrawList) {
-			s.updateInDrawList = false;
-			TriListElem l = s.triListElem;
-			if (l != null) {
-				if (l.getIndex() != -1) {
-					remove(s);
-					TriListElem lm = add(s, s.cullInfo != CullInfo2.OUT);
-					s.triListElem = lm;
-					lm.setOwner(s);
-				} else {
-					CullInfo2 c = s.cullInfo;
-					s.cullInfo = CullInfo2.ALLIN;
-					TriListElem lm = add(s, s.cullInfo != CullInfo2.OUT);
-					s.triListElem = lm;
-					lm.setOwner(s);
-					s.cullInfo = c;
-				}
-				s.reinsertInQueue();
-			}
-		}
-	}
-	
-	public TriListElem add(CurveSegment s, boolean visible) {
-		final CurveSegment p0 = (CurveSegment)s.parents[0];
-		final CurveSegment p1 = (CurveSegment)s.parents[1];
-		return add(p0.getVertex(0), p1.getVertex(1), p0.getDerivative(0), p1.getDerivative(1), visible);
-	}
-
-	public void add(DynamicMeshElement2 e, int i) {
-		add(e);
-	}
-
-	public boolean remove(DynamicMeshElement2 e, int i) {
-		return remove(e);
-	}
-
-	public void recalculate(int version) {
-		currentVersion = version;
-		TriListElem e = front;
-		LinkedList<DynamicMeshElement2> list = new LinkedList<DynamicMeshElement2>();
-		DynamicMeshElement2 el;
-		while (e != null) {
-			el = (DynamicMeshElement2) e.getOwner();
-			if (el.lastVersion != currentVersion)
-				list.add(el);
-			e = e.getNext();
-		}
-		Iterator<DynamicMeshElement2> it = list.iterator();
-		while (it.hasNext()) {
-			DynamicMeshElement2 elem = it.next();
-			reinsert(elem, currentVersion);
-		}
-	}
-}
-
-/**
- * A bucket assigner used for split operations. Sorts based on
- * SurfaceMeshDiamond.error.
- */
-class CurveSplitBucketAssigner implements BucketAssigner<DynamicMeshElement2> {
-
-	public int getBucketIndex(Object o, int bucketAmt) {
-		CurveSegment d = (CurveSegment) o;
-		double e = d.error;
-		int bucket = (int) (Math.pow(e / 100, 0.3) * bucketAmt);
-		if (bucket >= bucketAmt)
-			bucket = bucketAmt - 1;
-		if (bucket <= 0)
-			bucket = 1;
-		return bucket;
-	}
-}
-
-/**
- * Tree representing a parametric curve
- */
-public class CurveMesh extends DynamicMesh2 {
-
-	private static final int maxLevel = 20;
-
-	/** the parameter difference used to approximate tangents */
-	public static double deltaParam = 1e-10;
-	public static double invDeltaParam = 1/deltaParam;
-
-	private static final float scalingFactor = .8f;
-
-	/** the amount of vertices at the end of each segment */
-	static public final int nVerts = 4;
-	
-	/** proportionality constant for curve width */
-	private float curveWidthFactor = 1.0f;
-	
-	// DETAIL SETTINGS
-	private double maxErrorCoeff = 0.02;
-
-	/** Current level of detail setting */
-	public double levelOfDetail = 0.1;
-
-	/**
-	 * scaling constant used for setting the error of segments where one or more
-	 * vertices are undefined
-	 */
-	public static final double undefErrorConst = 100;
-
-	/** desired maximum error */
-	private double desiredMaxError;
-
-	private CurveSegment root;
-
-	/** reference to the curve being drawn */
-	GeoCurveCartesian3D curve;
-	
-	HashMap<Double, Coords> precalcVertices = new HashMap<Double, Coords>();
-
-	/**
-	 * @param curve
-	 *            The curve to render
-	 * @param cullingBox
-	 *            Axis-aligned box to cull segments against
-	 * @param scale
-	 *            How zoomed out things are - used to set width
-	 */
-	public CurveMesh(GeoCurveCartesian3D curve, double[] cullingBox, float scale) {
-		super(new FastBucketPQ(new CurveSplitBucketAssigner(), true),
-				new FastBucketPQ(new CurveSplitBucketAssigner(), false),
-				new CurveMeshTriList(100, 0, scale * scalingFactor), 2, 2,
-				maxLevel);
-
-		setCullingBox(cullingBox);
-
-		this.curve = curve;
-
-		initCurve();
-	}
-
-	/**
-	 * generates the first few segments
-	 */
-	private void initCurve() {
-		double min = curve.getMinParameter();
-		double max = curve.getMaxParameter();
-		CurveSegment a0 = new CurveSegment(this, -1, min, currentVersion);
-		CurveSegment a1 = new CurveSegment(this, -1, max, currentVersion);
-		root = new CurveSegment(this, 0, a0, a1, currentVersion);
-
-		root.updateCullInfo();
-
-		splitQueue.add(root);
-		drawList.add(root);
-		
-		setLevelOfDetail(10);
-
-		// split the first few elements in order to avoid problems
-		// with periodic funtions
-		for (int i = 0; i < 2; i++) {
-			if(i==100)
-				System.err.print("");
-			split(splitQueue.forcePoll());
-		}
-	}
-
-	@Override
-	protected void split(DynamicMeshElement2 t) {
-
-		CurveSegment s = (CurveSegment) t;
-		if (s == null) {
-			return;
-		}
-
-		boolean prev = s.isSplit();
-		
-		super.split(s);
-		if (!prev && s.isSplit()) {
-			CurveSegment left = s.prevInList;
-			CurveSegment right = s.nextInList;
-			CurveSegment c1 = (CurveSegment) s.children[0];
-			CurveSegment c2 = (CurveSegment) s.children[1];
-
-			c1.prevInList = left;
-			c1.nextInList = c2;
-			c2.prevInList = c1;
-			c2.nextInList = right;
-			s.nextInList = s.prevInList = null;
-
-			if (left != null) {
-				left.nextInList = c1;
-				if (c1.level - left.level > 1)
-					split(left);
-			}
-
-			if (right != null) {
-				right.prevInList = c2;
-				if (c2.level - right.level > 1) {
-					split(right);
-				}
-			}
-		}
-	}
-
-	@Override
-	protected void merge(DynamicMeshElement2 t) {
-
-		CurveSegment s = (CurveSegment) t;
-		if (s == null)
-			return;
-		boolean prev = s.isSplit();
-		super.merge(s);
-		if (!prev && s.isSplit()) {
-			CurveSegment c1 = (CurveSegment) s.children[0];
-			CurveSegment c2 = (CurveSegment) s.children[1];
-			CurveSegment left = c1.prevInList;
-			CurveSegment right = c2.nextInList;
-
-			c1.prevInList = c1.nextInList = c2.prevInList = c2.nextInList = null;
-
-			s.prevInList = left;
-			s.nextInList = right;
-			if (left != null)
-				left.nextInList = s;
-			if (right != null)
-				right.prevInList = s;
-		}
-	}
-
-	@Override
-	public void setCullingBox(double[] bb) {
-		this.cullingBox = bb;
-		double maxWidth, wx, wy, wz;
-		wx = bb[1] - bb[0];
-		wy = bb[5] - bb[4];
-		wz = bb[3] - bb[2];
-		maxWidth = wx > wy ? (wx > wz ? wx : wz) : (wy > wz ? wy : wz);
-		// update maxErrorCoeff
-		desiredMaxError = maxErrorCoeff * Math.pow(maxWidth,1.15);
-	}
-
-	/**
-	 * Sets the desired level of detail
-	 * 
-	 * @param l
-	 *            any value greater than or equal to zero, typically less than
-	 *            one
-	 */
-	public void setLevelOfDetail(double l) {
-		if (l < 0)
-			throw new RuntimeException();
-
-		levelOfDetail = l;
-		maxErrorCoeff = 1 / (Math.pow(10, 1.5 + l * 0.15));
-	}
-
-	/**
-	 * 
-	 * @return current level of detail - typically in [0,1]
-	 */
-	public double getLevelOfDetail() {
-		return levelOfDetail;
-	}
-	
-	/**
-	 * Sets the constant that regulates curve width.
-	 * 
-	 * @param width The new value. Must be greater than zero.
-	 */
-	public void setCurveWidthFactor(float width) {
-		if (width < 0)
-			throw new RuntimeException();
-
-		curveWidthFactor = width;
-	}
-
-	/**
-	 * @return The constant that regulates curve width.
-	 */
-	public float getCurveWidthFactor() {
-		return curveWidthFactor;
-	}
-
-	@Override
-	protected void updateCullingInfo() {
-		root.updateCullInfo();
-	}
-
-	@Override
-	protected Side tooCoarse() {
-		if (splitQueue.peek().getError() > desiredMaxError)
-			return Side.SPLIT;
-		else if (mergeQueue.peek() != null && mergeQueue.peek().getError() < desiredMaxError)
-			return Side.MERGE;
-		return Side.NONE;
-	}
-
-	@Override
-	protected String getDebugInfo(long time) {
-		return curve + ":\tupdate time: " + time + "ms\ttriangles: "
-				+ ((CurveTriList) drawList).getTriAmt() + "\t max error: "
-				+ splitQueue.peek().getError() + "\t error limit: "
-				+ desiredMaxError;
-	}
-
-	/**
-	 * @return the amount of visible segments
-	 */
-	public int getVisibleChunks() {
-		return ((CurveTriList) drawList).getChunkAmt();
-	}
-
-	/**
-	 * @return the amount of vertices per segment
-	 */
-	public int getVerticesPerChunk() {
-		return 2 * (nVerts + 1);
-	}
-
-	/**
-	 * rescales the mesh
-	 * 
-	 * @param scale
-	 *            the desired scale
-	 */
-	public void updateScale(float scale) {
-		((CurveTriList) drawList).rescale(scale * scalingFactor / curveWidthFactor);
-	}
-
-	@Override
-	public void updateParameters() {
-		precalcVertices.clear();
-		super.updateParameters();
 	}
 }

@@ -1,6 +1,8 @@
 package geogebra3D.euclidian3D;
 
-public class SurfaceTriList extends TriList {
+import geogebra3D.euclidian3D.plots.TriangleList;
+
+public class SurfaceTriList extends TriangleList {
 
 	public SurfaceTriList(int capacity, int margin, int floatsInChunk,
 			boolean dynamicSize) {

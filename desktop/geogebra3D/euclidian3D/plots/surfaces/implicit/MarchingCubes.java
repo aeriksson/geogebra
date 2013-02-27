@@ -1,10 +1,12 @@
-package geogebra3D.euclidian3D.plots;
+package geogebra3D.euclidian3D.plots.surfaces.implicit;
 
 import geogebra.common.kernel.Matrix.Coords;
 import geogebra.common.kernel.geos.GeoFunctionNVar;
-import geogebra3D.euclidian3D.BucketAssigner;
-import geogebra3D.euclidian3D.TriList;
-import geogebra3D.euclidian3D.TriListElem;
+import geogebra3D.euclidian3D.plots.BucketAssigner;
+import geogebra3D.euclidian3D.plots.DynamicMeshElement2;
+import geogebra3D.euclidian3D.plots.FastBucketPriorityQueue;
+import geogebra3D.euclidian3D.plots.TriangleList;
+import geogebra3D.euclidian3D.plots.TriangleListElement;
 
 import java.nio.FloatBuffer;
 import java.util.Iterator;
@@ -147,7 +149,7 @@ class MCTriangle extends DynamicMeshElement2 {
 	/** The error associated with the element */
 	double error;
 	/** The associated triangle list element */
-	public TriListElem triListElem;
+	public TriangleListElement triListElem;
 
 	/**
 	 * Standard constructor
@@ -314,7 +316,7 @@ class MCTriangle extends DynamicMeshElement2 {
 	}
 
 	@Override
-	protected double getError() {
+	public double getError() {
 		return error;
 	}
 
@@ -365,7 +367,7 @@ class MCTriangle extends DynamicMeshElement2 {
  * 
  * @author André Eriksson
  */
-class MCTriList extends TriList {
+class MCTriList extends TriangleList {
 
 	GeoFunctionNVar f;
 	private final double delta = 1e-4;
@@ -383,7 +385,7 @@ class MCTriList extends TriList {
 
 	double errorSum() {
 		double sum = 0;
-		for (TriListElem elem : this)
+		for (TriangleListElement elem : this)
 			sum += ((MCTriangle) elem.getOwner()).getError();
 		return sum;
 	}
@@ -440,7 +442,7 @@ class MCTriList extends TriList {
 						{ v[6], v[7], v[8] } }, f);
 				tris.add(tri);
 
-				TriListElem el = add(v, n);
+				TriangleListElement el = add(v, n);
 				el.setOwner(tri);
 				tri.triListElem = el;
 			}
@@ -3250,13 +3252,13 @@ class MCTriList extends TriList {
 
 		calcNormals(v, n);
 
-		TriListElem el = add(v, n);
+		TriangleListElement el = add(v, n);
 		el.setOwner(c);
 		c.triListElem = el;
 	}
 
 	public void remove(MCTriangle t) {
-		if (!remove(t.triListElem))
+		if (!removeTriangle(t.triListElem))
 			System.out.print("");
 	}
 
@@ -3282,11 +3284,11 @@ class MCAssigner implements BucketAssigner<DynamicMeshElement2> {
  */
 class MCROAM {
 	private MCTriList triList;
-	private FastBucketPQ pSplit = new FastBucketPQ(new MCAssigner(), false);
+	private FastBucketPriorityQueue pSplit = new FastBucketPriorityQueue(new MCAssigner(), false);
 
 	MCROAM(MCTriList triList) {
 		this.triList = triList;
-		for (TriListElem t : triList) {
+		for (TriangleListElement t : triList) {
 			MCTriangle tri = (MCTriangle) t.getOwner();
 			pSplit.add(tri);
 		}

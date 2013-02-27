@@ -6,7 +6,7 @@ import geogebra.common.kernel.geos.GeoFunctionNVar;
 import geogebra.common.kernel.kernelND.SurfaceEvaluable;
 import geogebra3D.euclidian3D.opengl.PlotterSurface;
 import geogebra3D.euclidian3D.opengl.Renderer;
-import geogebra3D.euclidian3D.plots.SurfaceMesh2;
+import geogebra3D.euclidian3D.plots.surfaces.parametric.SurfaceMesh2;
 
 /**
  * Class for drawing a 2-var function

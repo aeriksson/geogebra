@@ -1,13 +1,14 @@
 package geogebra3D.euclidian3D;
 
 import geogebra3D.euclidian3D.opengl.Renderer;
+import geogebra3D.euclidian3D.plots.CurveTriangleList;
 
 import java.nio.FloatBuffer;
 
 public class DrawIntersection3D extends Drawable3DCurves{
 	
 	/** A triangle list for the intersection */
-	CurveTriList tris;
+	CurveTriangleList tris;
 	
 	/**
 	 * @param a_view3d
