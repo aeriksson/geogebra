@@ -61,7 +61,7 @@ public class CurveMesh extends DynamicMesh2 {
 	public CurveMesh(GeoCurveCartesian3D curve, double[] cullingBox, float scale) {
 		super(new FastBucketPriorityQueue(new CurveBucketAssigner(), true),
 				new FastBucketPriorityQueue(new CurveBucketAssigner(), false),
-				new CurveMeshTriList(100, 0, scale), 2, 2,
+				new CurveMeshTriangleList(100, 0, scale), 2, 2,
 				MAX_REFINEMENT_DEPTH);
 
 		setCullingBox(cullingBox);

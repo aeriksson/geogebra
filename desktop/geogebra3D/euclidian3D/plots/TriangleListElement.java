@@ -3,30 +3,38 @@ package geogebra3D.euclidian3D.plots;
 
 /**
  * A class representing a triangle in TriList
- * @author André Eriksson
  */
 public class TriangleListElement{
+	
+	/** The index of the first element of the triangle in the float buffer */
 	protected int index;
+	
+	/** next element in the triangle list */
 	protected TriangleListElement nextInList;
+	/** previous element in the triangle list */
 	protected TriangleListElement previousInList;
 	
+	/** cache for vertices when the element is hidden */
 	protected float[] vertexCache;
+	/** cache for normals when the element is hidden */
 	protected float[] normalCache;
 	
-	public char flags = 0;
+	/** whether or not the element is empty (i.e. has no vertices/normals) */
+	public final boolean isEmpty;
 	
-	public TriangleListElement() {}
-	
-	public TriangleListElement(char flags) {
-		this.flags = flags;
+	/**
+	 * @param isEmpty Whether or not the element is empty (has no vertices/normals)
+	 */
+	public TriangleListElement(boolean isEmpty) {
+		this.isEmpty = isEmpty;
 	}
 	
-	/** an (optional) reference to the object associated with the element*/
+	/** an (optional) reference to the dynamic mesh object associated with the element */
 	protected Object owner;
 	
 	/**
-	 * sets the owner associated with the element
-	 * @param owner
+	 * Sets the owner associated with the element
+	 * @param owner The new owner
 	 */
 	public void setOwner(Object owner){
 		this.owner = owner;
@@ -76,14 +84,14 @@ public class TriangleListElement{
 	
 	/**
 	 * Sets the triangle's index in the float buffer.
-	 * @param i 
+	 * @param i The new index.
 	 */
 	public void setIndex(int i) {
 		index = i;
 	}
 	
 	/**
-	 * @return the triangle's index in the float buffer.
+	 * @return The triangle's index in the float buffer.
 	 */
 	public int getIndex() {
 		return index;

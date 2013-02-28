@@ -296,7 +296,7 @@ public abstract class DynamicMesh2 {
 		noUpdate = false;
 
 		// update all elements currently in draw list
-		drawList.recalculate(currentVersion);
+		drawList.update(currentVersion);
 
 		updateCullingInfo();
 		

@@ -281,6 +281,7 @@ class CurveTriListElem extends TriangleListElement {
 	 */
 	public CurveTriListElem(float[] v0, float[] v1, float[] t0, float[] t1,
 			short nVertices, float[] cosines, float[] sines) {
+		super(false);
 		pts = new float[2][nVertices][3];
 		nrms = new float[2][nVertices][3];
 

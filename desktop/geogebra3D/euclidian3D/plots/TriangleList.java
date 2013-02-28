@@ -5,27 +5,33 @@ import java.nio.FloatBuffer;
 import java.util.Iterator;
 
 /**
- * A list of triangles representing a triangle mesh.
+ * A linked list of triangles (vertices and normals) representing a triangle mesh.
+ * Triangles are stored and retrieved in 'chunks', corresponding to
+ * a fixed number of triangles.
+ * Each chunk is associated with a TriangleListElement. 
+ * All vertices and normals are stored contiguously in two FloatBuffers.
  */
 public class TriangleList implements Iterable<TriangleListElement>{
 	/** the total amount of chunks available for allocation */
 	private int currentCapacity;
 
+	/** the number of extra chunks to keep in the buffer */
+	private final int capacityMargin;
+
 	/** the amount of floats in each chunk */
 	private final int chunkSize;
 
+	/** current number of chunks in list */
 	private int chunkCount = 0;
 
-	private final int margin;
-
 	/**
-	 * A buffer containing data for all the triangles. Each triangle is stored
+	 * A buffer containing vertex data for the triangles. Each triangle is stored
 	 * as 9 consecutive floats (representing x/y/z values for three points). The
 	 * triangles are packed tightly.
 	 */
-	private FloatBuffer vertexBuf;
-	/** A counterpart to tribuf containing normals */
-	private FloatBuffer normalBuf;
+	private FloatBuffer vertexBuffer;
+	/** A counterpart to the vertex buffer containing normals */
+	private FloatBuffer normalBuffer;
 
 	/** Pointer to the front of the queue */
 	protected TriangleListElement front;
@@ -53,10 +59,10 @@ public class TriangleList implements Iterable<TriangleListElement>{
 			boolean useDynamicSize) {
 		this.currentCapacity = capacity;
 		this.chunkSize = floatsInChunk;
-		this.margin = margin;
+		this.capacityMargin = margin;
 		this.sizeIsDymanic = useDynamicSize;
-		vertexBuf = FloatBuffer.allocate((capacity + margin) * chunkSize);
-		normalBuf = FloatBuffer.allocate((capacity + margin) * chunkSize);
+		vertexBuffer = FloatBuffer.allocate((capacity + margin) * chunkSize);
+		normalBuffer = FloatBuffer.allocate((capacity + margin) * chunkSize);
 	}
 
 	/**
@@ -64,16 +70,16 @@ public class TriangleList implements Iterable<TriangleListElement>{
 	 */
 	private void expand() {
 		currentCapacity *= SIZE_INCREASE_MULTIPLIER;
-		FloatBuffer verts = FloatBuffer.allocate((currentCapacity + margin)
+		FloatBuffer verts = FloatBuffer.allocate((currentCapacity + capacityMargin)
 				* chunkSize);
-		FloatBuffer norms = FloatBuffer.allocate((currentCapacity + margin)
+		FloatBuffer norms = FloatBuffer.allocate((currentCapacity + capacityMargin)
 				* chunkSize);
-		vertexBuf.rewind();
-		normalBuf.rewind();
-		verts.put(vertexBuf);
-		norms.put(normalBuf);
-		vertexBuf = verts;
-		normalBuf = norms;
+		vertexBuffer.rewind();
+		normalBuffer.rewind();
+		verts.put(vertexBuffer);
+		norms.put(normalBuffer);
+		vertexBuffer = verts;
+		normalBuffer = norms;
 	}
 
 	/**
@@ -95,21 +101,21 @@ public class TriangleList implements Iterable<TriangleListElement>{
 	 * @return a reference to vertexBuf
 	 */
 	public FloatBuffer getTriangleBuffer() {
-		return vertexBuf;
+		return vertexBuffer;
 	}
 
 	/**
 	 * @return a reference to normalBuf
 	 */
 	public FloatBuffer getNormalBuffer() {
-		return normalBuf;
+		return normalBuffer;
 	}
 
 	/**
 	 * @return true if count>=maxCount - otherwise false.
 	 */
 	public boolean isFull() {
-		return chunkCount >= currentCapacity - margin;
+		return chunkCount >= currentCapacity - capacityMargin;
 	}
 
 	/**
@@ -124,13 +130,13 @@ public class TriangleList implements Iterable<TriangleListElement>{
 	 */
 	protected void setFloats(float[] vertices, float[] normals, int index) {
 		if (sizeIsDymanic
-				&& index + vertices.length >= (currentCapacity + margin) * chunkSize)
+				&& index + vertices.length >= (currentCapacity + capacityMargin) * chunkSize)
 			expand();
 
-		vertexBuf.position(index);
-		vertexBuf.put(vertices);
-		normalBuf.position(index);
-		normalBuf.put(normals);
+		vertexBuffer.position(index);
+		vertexBuffer.put(vertices);
+		normalBuffer.position(index);
+		normalBuffer.put(normals);
 	}
 
 	/**
@@ -147,64 +153,64 @@ public class TriangleList implements Iterable<TriangleListElement>{
 	/**
 	 * gets the vertices of an element
 	 * 
-	 * @param el
+	 * @param element
 	 *            the element
 	 * @return the vertices of the element
 	 */
-	protected float[] getNormals(TriangleListElement el) {
-		return getNormals(el.getIndex());
+	protected float[] getNormals(TriangleListElement element) {
+		return getNormals(element.getIndex());
 	}
 
 	/**
 	 * sets the vertices of the specified element
 	 * 
-	 * @param el
+	 * @param element
 	 *            the element to set
 	 * @param vertices
 	 *            the new vertices
 	 */
-	protected void setVertices(TriangleListElement el, float[] vertices) {
-		vertexBuf.position(el.getIndex());
-		vertexBuf.put(vertices);
+	protected void setVertices(TriangleListElement element, float[] vertices) {
+		vertexBuffer.position(element.getIndex());
+		vertexBuffer.put(vertices);
 	}
 
 	/**
 	 * sets the normals of the specified element
 	 * 
-	 * @param el
+	 * @param element
 	 *            the element to set
 	 * @param normals
 	 *            the new normals
 	 */
-	protected void setNormals(TriangleListElement el, float[] normals) {
-		normalBuf.position(el.getIndex());
-		normalBuf.put(normals);
+	protected void setNormals(TriangleListElement element, float[] normals) {
+		normalBuffer.position(element.getIndex());
+		normalBuffer.put(normals);
 	}
 
 	/**
-	 * @param index
-	 * @return float array of vertices (chunkSize floats)
+	 * @param index Index of the vertices in the buffer.
+	 * @return float Array of floats containing the vertices.
 	 */
 	protected float[] getVertices(int index) {
 		float[] vertices = new float[chunkSize];
-		vertexBuf.position(index);
-		vertexBuf.get(vertices);
+		vertexBuffer.position(index);
+		vertexBuffer.get(vertices);
 		return vertices;
 	}
 
 	/**
-	 * @param index
+	 * @param index Index of the normals in the buffer.
 	 * @return float array of normals (chunkSize floats)
 	 */
 	protected float[] getNormals(int index) {
 		float[] normals = new float[chunkSize];
-		normalBuf.position(index);
-		normalBuf.get(normals);
+		normalBuffer.position(index);
+		normalBuffer.get(normals);
 		return normals;
 	}
 
 	/**
-	 * Adds a triangle to the list.
+	 * Adds a triangle to the back of the list.
 	 * 
 	 * @param vertices
 	 *            the tree vertices in the triangle stored as (chunkSize) floats
@@ -214,47 +220,37 @@ public class TriangleList implements Iterable<TriangleListElement>{
 	 */
 	public TriangleListElement add(float[] vertices, float[] normals) {
 
-		TriangleListElement t = new TriangleListElement();
-		t.setPrev(back);
-		if (front == null)
-			front = t;
-		if (back != null)
-			back.setNext(t);
-		back = t;
+		TriangleListElement triangle = new TriangleListElement(false);
 
-		int index = chunkSize * chunkCount;
+		add(triangle, vertices, normals);
 
-		setFloats(vertices, normals, index);
-
-		t.setIndex(index);
-
-		chunkCount++;
-
-		return t;
+		return triangle;
 	}
 	
 	/**
-	 * Adds a triangle to the list.
+	 * Adds a triangle to the back of the list.
 	 * 
+	 * @param triangle
+	 *            The triangle element to use.
 	 * @param vertices
-	 *            the tree vertices in the triangle stored as (chunkSize) floats
+	 *            The tree vertices in the triangle stored as (chunkSize) floats.
 	 * @param normals
-	 *            the normals of the vertices stored as (chunkSize) floats
+	 *            The normals of the vertices stored as (chunkSize) floats.
 	 */
-	public void add(TriangleListElement t, float[] vertices, float[] normals) {
+	public void add(TriangleListElement triangle, float[] vertices, float[] normals) {
 
-		t.setPrev(back);
+		triangle.setPrev(back);
 		if (front == null)
-			front = t;
+			front = triangle;
 		if (back != null)
-			back.setNext(t);
-		back = t;
+			back.setNext(triangle);
+		back = triangle;
 
 		int index = chunkSize * chunkCount;
 
 		setFloats(vertices, normals, index);
 
-		t.setIndex(index);
+		triangle.setIndex(index);
 
 		chunkCount++;
 	}
@@ -272,24 +268,25 @@ public class TriangleList implements Iterable<TriangleListElement>{
 		float[] f = new float[chunkSize];
 		float[] g = new float[chunkSize];
 
-		vertexBuf.position(oldIndex);
-		vertexBuf.get(f);
-		vertexBuf.position(newIndex);
+		vertexBuffer.position(oldIndex);
+		vertexBuffer.get(f);
+		vertexBuffer.position(newIndex);
 
-		normalBuf.position(oldIndex);
-		normalBuf.get(g);
-		normalBuf.position(newIndex);
+		normalBuffer.position(oldIndex);
+		normalBuffer.get(g);
+		normalBuffer.position(newIndex);
 
 		for (int i = 0; i < chunkSize; i++) {
-			vertexBuf.put(f[i]);
-			normalBuf.put(g[i]);
+			vertexBuffer.put(f[i]);
+			normalBuffer.put(g[i]);
 		}
 	}
 
 	/**
 	 * Removes a triangle from the queue.
 	 * 
-	 * @param triangle
+	 * @param triangle The triangle to remove.
+	 * @return True if the removal was successful; otherwise false.
 	 */
 	public boolean removeTriangle(TriangleListElement triangle) {
 		return hideTriangle(triangle);
@@ -386,26 +383,26 @@ public class TriangleList implements Iterable<TriangleListElement>{
 	/**
 	 * shows a triangle that has been hidden
 	 * 
-	 * @param triangle
+	 * @param element
 	 *            any hidden triangle in the list
 	 * @return false if the triangle is null or already visible, otherwise true
 	 */
-	public boolean showTriangle(TriangleListElement triangle) {
+	public boolean showTriangle(TriangleListElement element) {
 		
-		if (triangle == null || triangle.getIndex() != -1)
+		if (element == null || element.getIndex() != -1)
 			return false;
 
 		if (front == null)
-			front = triangle;
+			front = element;
 		if (back != null) {
-			back.setNext(triangle);
-			triangle.setPrev(back);
+			back.setNext(element);
+			element.setPrev(back);
 		}
-		back = triangle;
+		back = element;
 
-		setFloats(triangle.clearVertices(), triangle.clearNormals(), chunkSize * chunkCount);
+		setFloats(element.clearVertices(), element.clearNormals(), chunkSize * chunkCount);
 
-		triangle.setIndex(chunkSize * chunkCount);
+		element.setIndex(chunkSize * chunkCount);
 
 		chunkCount++;
 

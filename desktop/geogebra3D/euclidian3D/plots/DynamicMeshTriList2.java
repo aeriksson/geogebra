@@ -53,7 +53,7 @@ public interface DynamicMeshTriList2 {
 	 * Reevaluates vertices, error, etc. for all elements in the list.
 	 * @param currentVersion current mesh version
 	 */
-	public void recalculate(int currentVersion);
+	public void update(int currentVersion);
 
 	/**
 	 * Reinserts an element into the list - used when an element is updated

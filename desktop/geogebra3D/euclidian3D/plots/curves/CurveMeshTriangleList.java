@@ -10,9 +10,9 @@ import java.util.Iterator;
 import java.util.LinkedList;
 
 /**
- * Triangle list used for curves
+ * Curve triangle list targeted towards curve meshes.
  */
-class CurveMeshTriList extends CurveTriangleList implements DynamicMeshTriList2 {
+class CurveMeshTriangleList extends CurveTriangleList implements DynamicMeshTriList2 {
 
 	private int currentVersion;
 
@@ -24,7 +24,7 @@ class CurveMeshTriList extends CurveTriangleList implements DynamicMeshTriList2 
 	 * @param scale
 	 *            the scale for the segment
 	 */
-	CurveMeshTriList(int capacity, int marigin, float scale) {
+	CurveMeshTriangleList(int capacity, int marigin, float scale) {
 		super(capacity, marigin, scale);
 	}
 
@@ -42,7 +42,7 @@ class CurveMeshTriList extends CurveTriangleList implements DynamicMeshTriList2 
 			// create an empty TriListElem to show that
 			// the element has been 'added' to the list
 
-			s.triListElem = new TriangleListElement();
+			s.triListElem = new TriangleListElement(true);
 			s.triListElem.setOwner(s);
 			s.triListElem.setIndex(1);
 
@@ -150,15 +150,18 @@ class CurveMeshTriList extends CurveTriangleList implements DynamicMeshTriList2 
 		return remove(e);
 	}
 
-	public void recalculate(int version) {
+	public void update(int version) {
 		currentVersion = version;
 		TriangleListElement e = front;
 		LinkedList<DynamicMeshElement2> list = new LinkedList<DynamicMeshElement2>();
 		DynamicMeshElement2 el;
 		while (e != null) {
 			el = (DynamicMeshElement2) e.getOwner();
-			if (el.lastVersion != currentVersion)
+			
+			if (el.lastVersion != currentVersion) {
 				list.add(el);
+			}
+			
 			e = e.getNext();
 		}
 		Iterator<DynamicMeshElement2> it = list.iterator();

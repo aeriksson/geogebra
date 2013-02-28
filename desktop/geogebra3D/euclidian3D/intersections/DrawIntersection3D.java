@@ -2,9 +2,9 @@ package geogebra3D.euclidian3D.intersections;
 
 import geogebra3D.euclidian3D.Drawable3DCurves;
 import geogebra3D.euclidian3D.EuclidianView3D;
-import geogebra3D.euclidian3D.SurfaceTriList;
 import geogebra3D.euclidian3D.opengl.Renderer;
 import geogebra3D.euclidian3D.plots.CurveTriangleList;
+import geogebra3D.euclidian3D.plots.surfaces.parametric.SurfaceTriangleList;
 
 import java.nio.FloatBuffer;
 
@@ -19,7 +19,7 @@ public class DrawIntersection3D extends Drawable3DCurves{
 	 * @param object2 the second object to intersect
 	 * @throws Exception if there's an error when computing the intersection
 	 */
-	public DrawIntersection3D(EuclidianView3D a_view3d, SurfaceTriList object1, SurfaceTriList object2) throws Exception {
+	public DrawIntersection3D(EuclidianView3D a_view3d, SurfaceTriangleList object1, SurfaceTriangleList object2) throws Exception {
 		super(a_view3d);
 		
 		init(object1, object2);
@@ -31,7 +31,7 @@ public class DrawIntersection3D extends Drawable3DCurves{
 	 * @param object2
 	 * @throws Exception
 	 */
-	private void init(SurfaceTriList object1, SurfaceTriList object2) throws Exception{
+	private void init(SurfaceTriangleList object1, SurfaceTriangleList object2) throws Exception{
 		
 		//bruteforce for now
 		FloatBuffer ver1 = object1.getTriangleBuffer();
