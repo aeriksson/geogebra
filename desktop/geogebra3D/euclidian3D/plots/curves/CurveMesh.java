@@ -2,8 +2,8 @@ package geogebra3D.euclidian3D.plots.curves;
 
 import geogebra.common.kernel.Matrix.Coords;
 import geogebra3D.euclidian3D.plots.CurveTriangleList;
-import geogebra3D.euclidian3D.plots.DynamicMesh2;
-import geogebra3D.euclidian3D.plots.DynamicMeshElement2;
+import geogebra3D.euclidian3D.plots.DynamicMesh;
+import geogebra3D.euclidian3D.plots.DynamicMeshElement;
 import geogebra3D.euclidian3D.plots.FastBucketPriorityQueue;
 import geogebra3D.kernel3D.GeoCurveCartesian3D;
 
@@ -12,7 +12,7 @@ import java.util.HashMap;
 /**
  * Tree representing a parametric curve
  */
-public class CurveMesh extends DynamicMesh2 {
+public class CurveMesh extends DynamicMesh {
 
 	private static final int MAX_REFINEMENT_DEPTH = 20;
 
@@ -94,7 +94,7 @@ public class CurveMesh extends DynamicMesh2 {
 	}
 
 	@Override
-	protected void split(DynamicMeshElement2 t) {
+	protected void split(DynamicMeshElement t) {
 
 		CurveSegment s = (CurveSegment) t;
 		if (s == null) {
@@ -133,7 +133,7 @@ public class CurveMesh extends DynamicMesh2 {
 	}
 
 	@Override
-	protected void merge(DynamicMeshElement2 t) {
+	protected void merge(DynamicMeshElement t) {
 		CurveSegment s = (CurveSegment) t;
 		if (s == null)
 			return;
@@ -214,8 +214,8 @@ public class CurveMesh extends DynamicMesh2 {
 
 	@Override
 	protected Side needsRefinement() {
-		DynamicMeshElement2 nextInSplitQueue = splitQueue.peek();
-		DynamicMeshElement2 nextInMergeQueue = mergeQueue.peek();
+		DynamicMeshElement nextInSplitQueue = splitQueue.peek();
+		DynamicMeshElement nextInMergeQueue = mergeQueue.peek();
 		
 		if (nextInSplitQueue.getError() > desiredMaxError) {
 			return Side.SPLIT;

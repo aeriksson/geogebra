@@ -2,14 +2,14 @@ package geogebra3D.euclidian3D.plots.surfaces.parametric;
 
 import geogebra.common.kernel.Matrix.Coords;
 import geogebra.common.kernel.kernelND.SurfaceEvaluable;
-import geogebra3D.euclidian3D.plots.DynamicMeshElement2;
+import geogebra3D.euclidian3D.plots.DynamicMeshElement;
 import geogebra3D.euclidian3D.plots.FastBucketPriorityQueue;
 import geogebra3D.euclidian3D.plots.TriangleListElement;
 
 /**
  * An element in a CurveMesh.
  */
-class SurfaceDiamond2 extends DynamicMeshElement2 {
+class SurfaceDiamond extends DynamicMeshElement {
 	// MISC
 	/** error measure */
 	double[] errors = new double[2];
@@ -33,7 +33,7 @@ class SurfaceDiamond2 extends DynamicMeshElement2 {
 
 	// OTHER DIAMONDS
 	/** the other two corners */
-	SurfaceDiamond2[] ancestors = new SurfaceDiamond2[2];
+	SurfaceDiamond[] ancestors = new SurfaceDiamond[2];
 	/** the index of this diamond within each of its parents */
 	int[] indices = new int[2];
 
@@ -54,7 +54,7 @@ class SurfaceDiamond2 extends DynamicMeshElement2 {
 	 *            The current version of the mesh - changes when the function
 	 *            changes
 	 */
-	public SurfaceDiamond2(SurfaceMesh2 mesh, int level, double pa1,
+	public SurfaceDiamond(SurfaceMesh mesh, int level, double pa1,
 			double pa2, boolean isClipped, int version) {
 		super(mesh, level, isClipped, version);
 
@@ -87,9 +87,9 @@ class SurfaceDiamond2 extends DynamicMeshElement2 {
 	 *            The current version of the mesh - changes when the function
 	 *            changes
 	 */
-	SurfaceDiamond2(SurfaceMesh2 mesh, SurfaceDiamond2 parent0, int index0,
-			SurfaceDiamond2 parent1, int index1, SurfaceDiamond2 ancestor0,
-			SurfaceDiamond2 ancestor1, int level, int version) {
+	SurfaceDiamond(SurfaceMesh mesh, SurfaceDiamond parent0, int index0,
+			SurfaceDiamond parent1, int index1, SurfaceDiamond ancestor0,
+			SurfaceDiamond ancestor1, int level, int version) {
 		super(mesh, level, ancestor0.ignoreFlag
 				|| (parent0.ignoreFlag && parent1.ignoreFlag), version);
 
@@ -128,16 +128,16 @@ class SurfaceDiamond2 extends DynamicMeshElement2 {
 	 * @return An approximation of the normal
 	 */
 	private Coords approxNormal(double u, double v) {
-		Coords dx = calcVertex(u + SurfaceMesh2.normalDelta, v);
-		Coords dy = calcVertex(u, v + SurfaceMesh2.normalDelta);
+		Coords dx = calcVertex(u + SurfaceMesh.normalDelta, v);
+		Coords dy = calcVertex(u, v + SurfaceMesh.normalDelta);
 		return dx.sub(vertex).crossProduct(dy.sub(vertex)).normalized();
 	}
 
 	void calcMainVertex(double u, double v) {
-		final SurfaceEvaluable function = ((SurfaceMesh2) mesh).getFunction();
+		final SurfaceEvaluable function = ((SurfaceMesh) mesh).getFunction();
 		Coords f = function.evaluatePoint(u, v);
-		final SurfaceDiamond2 a0 = ancestors[0];
-		final SurfaceDiamond2 a1 = ancestors[1];
+		final SurfaceDiamond a0 = ancestors[0];
+		final SurfaceDiamond a1 = ancestors[1];
 		final boolean v2def = a0.getVertex(this).isDefined();
 		final boolean v3def = a1.getVertex(this).isDefined();
 
@@ -211,7 +211,7 @@ class SurfaceDiamond2 extends DynamicMeshElement2 {
 	 * @return
 	 */
 	private Coords calcVertex(double u, double v) {
-		final SurfaceEvaluable function = ((SurfaceMesh2) mesh).getFunction();
+		final SurfaceEvaluable function = ((SurfaceMesh) mesh).getFunction();
 		Coords f = function.evaluatePoint(u, v);
 
 		// if infinite, attempt to move in some direction
@@ -242,18 +242,18 @@ class SurfaceDiamond2 extends DynamicMeshElement2 {
 	@Override
 	protected void createChild(int i) {
 
-		SurfaceDiamond2 parent = null;
-		SurfaceDiamond2 otherParent = null;
+		SurfaceDiamond parent = null;
+		SurfaceDiamond otherParent = null;
 
 		int index;
 		if (i < 2) {
-			parent = (SurfaceDiamond2) parents[0];
+			parent = (SurfaceDiamond) parents[0];
 			if (i == 0)
 				index = indices[0] + 1;
 			else
 				index = indices[0] - 1;
 		} else {
-			parent = (SurfaceDiamond2) parents[1];
+			parent = (SurfaceDiamond) parents[1];
 			if (i == 2)
 				index = indices[1] + 1;
 			else
@@ -261,21 +261,21 @@ class SurfaceDiamond2 extends DynamicMeshElement2 {
 		}
 
 		if (parent != null)
-			otherParent = (SurfaceDiamond2) parent.getChild(index & 3);
+			otherParent = (SurfaceDiamond) parent.getChild(index & 3);
 
 		int parentIndex = i / 2;
 		int ancestorIndex = i == 1 || i == 2 ? 1 : 0;
-		SurfaceDiamond2 a0 = (SurfaceDiamond2) parents[parentIndex];
-		SurfaceDiamond2 a1 = ancestors[ancestorIndex];
+		SurfaceDiamond a0 = (SurfaceDiamond) parents[parentIndex];
+		SurfaceDiamond a1 = ancestors[ancestorIndex];
 
 		int otherIndex = i == 0 || i == 2 ? 1 : 0;
 		if (otherParent != null && otherParent.parents[1] == parent)
 			otherIndex |= 2;
 		if (i == 1 || i == 3)
-			children[i] = new SurfaceDiamond2((SurfaceMesh2) mesh, otherParent,
+			children[i] = new SurfaceDiamond((SurfaceMesh) mesh, otherParent,
 					otherIndex, this, i, a0, a1, level + 1, lastVersion);
 		else
-			children[i] = new SurfaceDiamond2((SurfaceMesh2) mesh, this, i,
+			children[i] = new SurfaceDiamond((SurfaceMesh) mesh, this, i,
 					otherParent, otherIndex, a0, a1, level + 1, lastVersion);
 
 		if (otherParent != null)
@@ -290,7 +290,7 @@ class SurfaceDiamond2 extends DynamicMeshElement2 {
 
 		// cull quadtree children
 		for (int i = 0; i < 4; i += 2) {
-			SurfaceDiamond2 child = (SurfaceDiamond2) getChild(i);
+			SurfaceDiamond child = (SurfaceDiamond) getChild(i);
 			if (child != null) {
 				if (this == child.getParent(0)) {
 					if (child.childCreated(0))
@@ -323,8 +323,8 @@ class SurfaceDiamond2 extends DynamicMeshElement2 {
 	 * parameter area by a constant.
 	 */
 	void generateError() {
-        Coords p0 = ((SurfaceDiamond2) parents[0]).getVertex(this);
-        Coords p1 = ((SurfaceDiamond2) parents[1]).getVertex(this);
+        Coords p0 = ((SurfaceDiamond) parents[0]).getVertex(this);
+        Coords p1 = ((SurfaceDiamond) parents[1]).getVertex(this);
         Coords a0 = (ancestors[0]).getVertex(this);
         Coords a1 = (ancestors[1]).getVertex(this);
 
@@ -345,11 +345,11 @@ class SurfaceDiamond2 extends DynamicMeshElement2 {
         if (Double.isNaN(vol0) || Double.isInfinite(vol0))
                 // use a different error measure for infinite points
                 // namely the base area times some constant
-                errors[0] = area * area * SurfaceMesh2.undefErrorConst;
+                errors[0] = area * area * SurfaceMesh.undefErrorConst;
         else
                 errors[0] = vol0;
         if (Double.isNaN(vol1) || Double.isInfinite(vol1))
-                errors[1] = area * area * SurfaceMesh2.undefErrorConst;
+                errors[1] = area * area * SurfaceMesh.undefErrorConst;
         else
                 errors[1] = vol1;
 
@@ -361,9 +361,9 @@ class SurfaceDiamond2 extends DynamicMeshElement2 {
                 double nv = alpha * params[1] + (1 - alpha)
                                 * ancestors[0].params[1];
                 nu = alpha * nu + (1 - alpha)
-                                * ((SurfaceDiamond2) parents[0]).params[0];
+                                * ((SurfaceDiamond) parents[0]).params[0];
                 nv = alpha * nv + (1 - alpha)
-                                * ((SurfaceDiamond2) parents[1]).params[1];
+                                * ((SurfaceDiamond) parents[1]).params[1];
                 Coords pt = calcVertex(nu, nv);
                 if (pt.sub(vertex).dotproduct(a0.sub(pt)) < 0.99)
                         errors[0] = errors[1] = area * 0.1;
@@ -408,7 +408,7 @@ class SurfaceDiamond2 extends DynamicMeshElement2 {
 	/**
 	 * Given one parent, returns the other
 	 */
-	private DynamicMeshElement2 getOtherParent(DynamicMeshElement2 p) {
+	private DynamicMeshElement getOtherParent(DynamicMeshElement p) {
 		if (p == parents[0])
 			return parents[1];
 		return parents[0];
@@ -430,7 +430,7 @@ class SurfaceDiamond2 extends DynamicMeshElement2 {
 //		return vertex;
 //	}
 
-	public Coords getVertex(SurfaceDiamond2 o) {
+	public Coords getVertex(SurfaceDiamond o) {
 		if (alt == null)
 			return vertex;
 		
@@ -449,7 +449,7 @@ class SurfaceDiamond2 extends DynamicMeshElement2 {
 	 * Only move to merge if neither parent is split
 	 */
 	@Override
-	public boolean readyForMerge(DynamicMeshElement2 activeParent) {
+	public boolean readyForMerge(DynamicMeshElement activeParent) {
 		return !getOtherParent(activeParent).isSplit();
 	}
 
@@ -496,10 +496,10 @@ class SurfaceDiamond2 extends DynamicMeshElement2 {
 	public void setArea() {
 		if (ancestors[0].params[0] - params[0] != 0)
 			area = Math.abs((ancestors[0].params[0] - params[0])
-					* (((SurfaceDiamond2) parents[0]).params[1] - params[1]));
+					* (((SurfaceDiamond) parents[0]).params[1] - params[1]));
 		else
 			area = Math
-					.abs((((SurfaceDiamond2) parents[1]).params[0] - params[0])
+					.abs((((SurfaceDiamond) parents[1]).params[0] - params[0])
 							* (ancestors[0].params[1] - params[1]));
 	}
 
@@ -510,8 +510,8 @@ class SurfaceDiamond2 extends DynamicMeshElement2 {
 	void setBoundingBox() {
 		final Coords v1 = ancestors[0].getVertex(this);
 		final Coords v2 = ancestors[1].getVertex(this);
-		final Coords v3 = ((SurfaceDiamond2) parents[0]).getVertex(this);
-		final Coords v4 = ((SurfaceDiamond2) parents[1]).getVertex(this);
+		final Coords v3 = ((SurfaceDiamond) parents[0]).getVertex(this);
+		final Coords v4 = ((SurfaceDiamond) parents[1]).getVertex(this);
 		final Coords v5 = vertex;
 
 		double x0, x1, y0, y1, z0, z1, x, y, z;
@@ -567,13 +567,13 @@ class SurfaceDiamond2 extends DynamicMeshElement2 {
 	 * @param e
 	 *            the element to set it to
 	 */
-	void setChild(int i, DynamicMeshElement2 e) {
+	void setChild(int i, DynamicMeshElement e) {
 		children[i] = e;
 	}
 
 	@Override
 	protected void setHidden(boolean hide) {
-		SurfaceTriList2 t = (SurfaceTriList2) mesh.drawList;
+		SurfaceTriangleList t = (SurfaceTriangleList) mesh.drawList;
 
 		if (hide) {
 			t.hide(this, 0);

@@ -1,9 +1,9 @@
 package geogebra3D.euclidian3D.plots;
 
 /**
- * An enumeration for describing the culling status of a diamond
+ * Culling status of an object in a dynamic mesh.
  */
-public enum CullInfo2 {
+public enum CullInfo {
 	/** the entire diamond is in the viewing sphere */
 	ALLIN,
 	/** part of the diamond is in the viewing sphere */

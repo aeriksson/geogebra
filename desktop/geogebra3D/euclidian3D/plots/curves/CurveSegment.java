@@ -3,14 +3,14 @@ package geogebra3D.euclidian3D.plots.curves;
 import java.util.HashMap;
 
 import geogebra.common.kernel.Matrix.Coords;
-import geogebra3D.euclidian3D.plots.DynamicMeshElement2;
+import geogebra3D.euclidian3D.plots.DynamicMeshElement;
 import geogebra3D.euclidian3D.plots.TriangleListElement;
 import geogebra3D.kernel3D.GeoCurveCartesian3D;
 
 /**
  * An element in a CurveMesh.
  */
-class CurveSegment extends DynamicMeshElement2 {
+class CurveSegment extends DynamicMeshElement {
 
 	/** error value associated with the segment */
 	double error;

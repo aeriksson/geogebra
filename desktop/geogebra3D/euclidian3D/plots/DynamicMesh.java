@@ -9,7 +9,7 @@ import java.util.Date;
  * measure. One priority queue handles merge operations and another handles
  * split operations.
  */
-public abstract class DynamicMesh2 {
+public abstract class DynamicMesh {
 
 	/** the queue used for merge operations */
 	public FastBucketPriorityQueue mergeQueue;
@@ -23,7 +23,7 @@ public abstract class DynamicMesh2 {
 	protected double[] cullingBox;
 
 	/** the triangle list used by the mesh */
-	public DynamicMeshTriList2 drawList;
+	public DynamicMeshTriangleList drawList;
 
 	/** the maximum amount of operations to perform in one update */
 	private int stepRefinement = 100;
@@ -63,8 +63,8 @@ public abstract class DynamicMesh2 {
 	 * @param maxLevel
 	 *            maximum refinement depth
 	 */
-	protected DynamicMesh2(FastBucketPriorityQueue mergeQueue, FastBucketPriorityQueue splitQueue,
-			DynamicMeshTriList2 drawList, int nParents, int nChildren,
+	protected DynamicMesh(FastBucketPriorityQueue mergeQueue, FastBucketPriorityQueue splitQueue,
+			DynamicMeshTriangleList drawList, int nParents, int nChildren,
 			int maxLevel) {
 		this.mergeQueue = mergeQueue;
 		this.splitQueue = splitQueue;
@@ -185,7 +185,7 @@ public abstract class DynamicMesh2 {
 	 * @param t
 	 *            the target element
 	 */
-	protected void merge(DynamicMeshElement2 t) {
+	protected void merge(DynamicMeshElement t) {
 		// skip if null, if already merged or if below level 1
 		if (t == null || t.getLevel() < 1 || !t.isSplit())
 			return;
@@ -204,7 +204,7 @@ public abstract class DynamicMesh2 {
 		
 		// handle children
 		for (int i = 0; i < nChildren; i++) {
-			DynamicMeshElement2 c = t.getChild(i);
+			DynamicMeshElement c = t.getChild(i);
 			if (c.readyForMerge(t)) {
 				splitQueue.remove(c);
 
@@ -218,7 +218,7 @@ public abstract class DynamicMesh2 {
 
 		// handle parents
 		for (int i = 0; i < nParents; i++) {
-			DynamicMeshElement2 p = t.getParent(i);
+			DynamicMeshElement p = t.getParent(i);
 			if (!p.childrenSplit()) {
 				p.updateCullInfo();
 				mergeQueue.add(p);
@@ -236,7 +236,7 @@ public abstract class DynamicMesh2 {
 	 * @param t
 	 *            the target element
 	 */
-	protected void split(DynamicMeshElement2 t) {
+	protected void split(DynamicMeshElement t) {
 		if (t == null || t.ignoreFlag)
 			return;		
 		
@@ -256,7 +256,7 @@ public abstract class DynamicMesh2 {
 
 		// handle parents
 		for (int i = 0; i < nParents; i++) {
-			DynamicMeshElement2 p = t.getParent(i);
+			DynamicMeshElement p = t.getParent(i);
 			if (p != null) {
 				split(p);
 
@@ -266,7 +266,7 @@ public abstract class DynamicMesh2 {
 
 		// handle children
 		for (int i = 0; i < nChildren; i++) {
-			DynamicMeshElement2 c = t.getChild(i);
+			DynamicMeshElement c = t.getChild(i);
 			if (c.lastVersion != currentVersion) {
 				c.recalculate(currentVersion, false);
 			}

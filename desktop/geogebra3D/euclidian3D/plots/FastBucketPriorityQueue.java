@@ -15,13 +15,13 @@ public class FastBucketPriorityQueue {
 	private static final int DEFAULT_BUCKET_AMOUNT = 2048;
 
 	/** array of front of buckets */
-	protected DynamicMeshElement2[] buckets;
+	protected DynamicMeshElement[] buckets;
 
 	/** array of back of buckets */
-	protected DynamicMeshElement2[] backs;
+	protected DynamicMeshElement[] backs;
 
 	/** used for figuring out which buckets to insert elements into */
-	protected BucketAssigner<DynamicMeshElement2> bucketAssigner;
+	protected BucketAssigner<DynamicMeshElement> bucketAssigner;
 
 	/** the amount of buckets used */
 	protected final int bucketAmt;
@@ -41,7 +41,7 @@ public class FastBucketPriorityQueue {
 	 * @param reverse
 	 *            if true, elements are sorted reversely
 	 */
-	public FastBucketPriorityQueue(BucketAssigner<DynamicMeshElement2> ba,
+	public FastBucketPriorityQueue(BucketAssigner<DynamicMeshElement> ba,
 			boolean reverse) {
 		this(DEFAULT_BUCKET_AMOUNT, ba, reverse);
 	}
@@ -54,21 +54,21 @@ public class FastBucketPriorityQueue {
 	 * @param reverse
 	 *            if true, elements are sorted reversely
 	 */
-	public FastBucketPriorityQueue(int bucketAmt, BucketAssigner<DynamicMeshElement2> ba,
+	public FastBucketPriorityQueue(int bucketAmt, BucketAssigner<DynamicMeshElement> ba,
 			boolean reverse) {
 		this.bucketAmt = bucketAmt;
-		buckets = new DynamicMeshElement2[bucketAmt];
-		backs = new DynamicMeshElement2[bucketAmt];
+		buckets = new DynamicMeshElement[bucketAmt];
+		backs = new DynamicMeshElement[bucketAmt];
 		this.bucketAssigner = ba;
 		this.reverse = reverse;
 	}
 
-	private int getIndex(DynamicMeshElement2 el) {
+	private int getIndex(DynamicMeshElement el) {
 		int i = bucketAssigner.getBucketIndex(el, bucketAmt);
 		return reverse ? bucketAmt - 1 - i : i;
 	}
 
-	private boolean addToZeroBucket(DynamicMeshElement2 obj) {
+	private boolean addToZeroBucket(DynamicMeshElement obj) {
 		if (null == obj)
 			throw new NullPointerException();
 
@@ -105,9 +105,9 @@ public class FastBucketPriorityQueue {
 	 *            the object to be added.
 	 * @return false if the element is already in the queue. Otherwise true.
 	 */
-	public boolean add(DynamicMeshElement2 obj) {
+	public boolean add(DynamicMeshElement obj) {
 
-		if (obj.cullInfo == CullInfo2.OUT)
+		if (obj.cullInfo == CullInfo.OUT)
 			return addToZeroBucket(obj);
 
 		if (obj.bucket_owner != null)
@@ -141,7 +141,7 @@ public class FastBucketPriorityQueue {
 	 *            the element to remove
 	 * @return true if the object was in the queue - otherwise false.
 	 */
-	public boolean remove(DynamicMeshElement2 elem) {
+	public boolean remove(DynamicMeshElement elem) {
 		// ignore element if not in queue
 		if (elem == null || elem.bucket_owner != this)
 			return false;
@@ -177,7 +177,7 @@ public class FastBucketPriorityQueue {
 	/**
 	 * @return the first element in the top bucket
 	 */
-	public DynamicMeshElement2 peek() {
+	public DynamicMeshElement peek() {
 		return buckets[maxBucket];
 	}
 
@@ -185,10 +185,10 @@ public class FastBucketPriorityQueue {
 	 * Retrieves and removes the first element in the queue.
 	 * @return top element in first bucket, or null if all buckets appear to be empty
 	 */
-	public DynamicMeshElement2 poll() {
+	public DynamicMeshElement poll() {
 		if (maxBucket == 0)
 			return null;
-		DynamicMeshElement2 elem = buckets[maxBucket];
+		DynamicMeshElement elem = buckets[maxBucket];
 		remove(elem);
 		return elem;
 	}
@@ -197,8 +197,8 @@ public class FastBucketPriorityQueue {
 	 * Retrieves and removes the first element in the queue. Not stable if queue is empty.
 	 * @return top element in first bucket
 	 */
-	public DynamicMeshElement2 forcePoll() {
-		DynamicMeshElement2 elem = buckets[maxBucket];
+	public DynamicMeshElement forcePoll() {
+		DynamicMeshElement elem = buckets[maxBucket];
 		remove(elem);
 		return elem;
 	}
@@ -208,19 +208,19 @@ public class FastBucketPriorityQueue {
 	 * @param currentVersion Current version of the mesh - increments when the function is changed
 	 * @param triList Triangle list used.
 	 */
-	public void recalculate(int currentVersion, DynamicMeshTriList2 triList) {
-		LinkedList<DynamicMeshElement2> list = new LinkedList<DynamicMeshElement2>();
+	public void recalculate(int currentVersion, DynamicMeshTriangleList triList) {
+		LinkedList<DynamicMeshElement> list = new LinkedList<DynamicMeshElement>();
 		for (int i = 0; i <= maxBucket; i++) {
-			DynamicMeshElement2 e = buckets[i];
+			DynamicMeshElement e = buckets[i];
 			while (e != null) {
 				if (e.lastVersion != currentVersion)
 					list.add(e);
 				e = e.bucket_next;
 			}
 		}
-		Iterator<DynamicMeshElement2> it = list.iterator();
+		Iterator<DynamicMeshElement> it = list.iterator();
 		while (it.hasNext()) {
-			DynamicMeshElement2 a = it.next();
+			DynamicMeshElement a = it.next();
 			triList.reinsert(a, currentVersion);
 		}
 	}

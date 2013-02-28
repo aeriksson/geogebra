@@ -1,9 +1,9 @@
 package geogebra3D.euclidian3D.plots.curves;
 
-import geogebra3D.euclidian3D.plots.CullInfo2;
+import geogebra3D.euclidian3D.plots.CullInfo;
 import geogebra3D.euclidian3D.plots.CurveTriangleList;
-import geogebra3D.euclidian3D.plots.DynamicMeshElement2;
-import geogebra3D.euclidian3D.plots.DynamicMeshTriList2;
+import geogebra3D.euclidian3D.plots.DynamicMeshElement;
+import geogebra3D.euclidian3D.plots.DynamicMeshTriangleList;
 import geogebra3D.euclidian3D.plots.TriangleListElement;
 
 import java.util.Iterator;
@@ -12,7 +12,7 @@ import java.util.LinkedList;
 /**
  * Curve triangle list targeted towards curve meshes.
  */
-class CurveMeshTriangleList extends CurveTriangleList implements DynamicMeshTriList2 {
+class CurveMeshTriangleList extends CurveTriangleList implements DynamicMeshTriangleList {
 
 	private int currentVersion;
 
@@ -35,7 +35,7 @@ class CurveMeshTriangleList extends CurveTriangleList implements DynamicMeshTriL
 	 * @param t
 	 *            the segment to add
 	 */
-	public void add(DynamicMeshElement2 t) {
+	public void add(DynamicMeshElement t) {
 		CurveSegment s = (CurveSegment) t;
 
 		if (s.isSingular()) {
@@ -46,13 +46,13 @@ class CurveMeshTriangleList extends CurveTriangleList implements DynamicMeshTriL
 			s.triListElem.setOwner(s);
 			s.triListElem.setIndex(1);
 
-			if (s.cullInfo == CullInfo2.OUT)
+			if (s.cullInfo == CullInfo.OUT)
 				hide(s);
 
 			return;
 		}
 
-		TriangleListElement lm = add(s, s.cullInfo != CullInfo2.OUT);
+		TriangleListElement lm = add(s, s.cullInfo != CullInfo.OUT);
 
 		s.triListElem = lm;
 		lm.setOwner(s);
@@ -68,7 +68,7 @@ class CurveMeshTriangleList extends CurveTriangleList implements DynamicMeshTriL
 	 * @return true if the segment was removed, false if it wasn't in the curve
 	 *         in the first place
 	 */
-	public boolean remove(DynamicMeshElement2 t) {
+	public boolean remove(DynamicMeshElement t) {
 		CurveSegment s = (CurveSegment) t;
 
 		boolean ret = hide(s);
@@ -78,7 +78,7 @@ class CurveMeshTriangleList extends CurveTriangleList implements DynamicMeshTriL
 		return ret;
 	}
 
-	public boolean hide(DynamicMeshElement2 t) {
+	public boolean hide(DynamicMeshElement t) {
 		CurveSegment s = (CurveSegment) t;
 
 		if (s.isSingular() && s.triListElem != null
@@ -92,7 +92,7 @@ class CurveMeshTriangleList extends CurveTriangleList implements DynamicMeshTriL
 		return false;
 	}
 
-	public boolean show(DynamicMeshElement2 t) {
+	public boolean show(DynamicMeshElement t) {
 		CurveSegment s = (CurveSegment) t;
 
 		reinsert(s, currentVersion);
@@ -108,7 +108,7 @@ class CurveMeshTriangleList extends CurveTriangleList implements DynamicMeshTriL
 		return false;
 	}
 
-	public void reinsert(DynamicMeshElement2 a, int currentVersion) {
+	public void reinsert(DynamicMeshElement a, int currentVersion) {
 
 		CurveSegment s = (CurveSegment) a;
 
@@ -120,13 +120,13 @@ class CurveMeshTriangleList extends CurveTriangleList implements DynamicMeshTriL
 			if (l != null) {
 				if (l.getIndex() != -1) {
 					remove(s);
-					TriangleListElement lm = add(s, s.cullInfo != CullInfo2.OUT);
+					TriangleListElement lm = add(s, s.cullInfo != CullInfo.OUT);
 					s.triListElem = lm;
 					lm.setOwner(s);
 				} else {
-					CullInfo2 c = s.cullInfo;
-					s.cullInfo = CullInfo2.ALLIN;
-					TriangleListElement lm = add(s, s.cullInfo != CullInfo2.OUT);
+					CullInfo c = s.cullInfo;
+					s.cullInfo = CullInfo.ALLIN;
+					TriangleListElement lm = add(s, s.cullInfo != CullInfo.OUT);
 					s.triListElem = lm;
 					lm.setOwner(s);
 					s.cullInfo = c;
@@ -142,21 +142,21 @@ class CurveMeshTriangleList extends CurveTriangleList implements DynamicMeshTriL
 		return add(p0.getVertex(0), p1.getVertex(1), p0.getDerivative(0), p1.getDerivative(1), visible);
 	}
 
-	public void add(DynamicMeshElement2 e, int i) {
+	public void add(DynamicMeshElement e, int i) {
 		add(e);
 	}
 
-	public boolean remove(DynamicMeshElement2 e, int i) {
+	public boolean remove(DynamicMeshElement e, int i) {
 		return remove(e);
 	}
 
 	public void update(int version) {
 		currentVersion = version;
 		TriangleListElement e = front;
-		LinkedList<DynamicMeshElement2> list = new LinkedList<DynamicMeshElement2>();
-		DynamicMeshElement2 el;
+		LinkedList<DynamicMeshElement> list = new LinkedList<DynamicMeshElement>();
+		DynamicMeshElement el;
 		while (e != null) {
-			el = (DynamicMeshElement2) e.getOwner();
+			el = (DynamicMeshElement) e.getOwner();
 			
 			if (el.lastVersion != currentVersion) {
 				list.add(el);
@@ -164,9 +164,9 @@ class CurveMeshTriangleList extends CurveTriangleList implements DynamicMeshTriL
 			
 			e = e.getNext();
 		}
-		Iterator<DynamicMeshElement2> it = list.iterator();
+		Iterator<DynamicMeshElement> it = list.iterator();
 		while (it.hasNext()) {
-			DynamicMeshElement2 elem = it.next();
+			DynamicMeshElement elem = it.next();
 			reinsert(elem, currentVersion);
 		}
 	}

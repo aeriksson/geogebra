@@ -3,12 +3,12 @@ package geogebra3D.euclidian3D.plots;
 /**
  * Abstract class representing an element to be used in a dynamic mesh.
  */
-public abstract class DynamicMeshElement2 {
+public abstract class DynamicMeshElement {
 	private boolean isSplit;
 	/** children of the element */
-	public DynamicMeshElement2[] children;
+	public DynamicMeshElement[] children;
 	/** parents of the element */
-	public DynamicMeshElement2[] parents;
+	public DynamicMeshElement[] parents;
 
 	/** relative level of the element */
 	protected final int level;
@@ -17,7 +17,7 @@ public abstract class DynamicMeshElement2 {
 	public final boolean ignoreFlag;
 	
 	/** the mesh the element belongs to */
-	protected final DynamicMesh2 mesh;
+	protected final DynamicMesh mesh;
 
 	/** true if any evaluated point of the segment is singular */
 	protected boolean isSingular;
@@ -26,7 +26,7 @@ public abstract class DynamicMeshElement2 {
 	protected double[] boundingBox;
 
 	/** Culling status of the element */
-	public CullInfo2 cullInfo;
+	public CullInfo cullInfo;
 
 	/** previous version of the element - changes when the function changes */
 	public int lastVersion;
@@ -35,9 +35,9 @@ public abstract class DynamicMeshElement2 {
 
 	//bucket stuff//
 	/** previous element in bucket */
-	DynamicMeshElement2 bucket_prev;
+	DynamicMeshElement bucket_prev;
 	/** next element in bucket */
-	DynamicMeshElement2 bucket_next;
+	DynamicMeshElement bucket_next;
 	/** index of object in bucket */
 	int bucket_index;
 	/** bucket the element belongs to */
@@ -54,13 +54,13 @@ public abstract class DynamicMeshElement2 {
 	 * @param version
 	 *            current version of the element
 	 */
-	public DynamicMeshElement2(DynamicMesh2 mesh, int level, boolean ignoreFlag, int version) {
+	public DynamicMeshElement(DynamicMesh mesh, int level, boolean ignoreFlag, int version) {
 		this.level = level;
 		this.ignoreFlag = ignoreFlag;
 		this.lastVersion = version;
 		this.mesh = mesh;
-		children = new DynamicMeshElement2[mesh.nChildren];
-		parents = new DynamicMeshElement2[mesh.nParents];
+		children = new DynamicMeshElement[mesh.nChildren];
+		parents = new DynamicMeshElement[mesh.nParents];
 	}
 
 	/**merg
@@ -91,7 +91,7 @@ public abstract class DynamicMeshElement2 {
 	 *            child index < nChildren
 	 * @return the child at index i
 	 */
-	public DynamicMeshElement2 getChild(int i) {
+	public DynamicMeshElement getChild(int i) {
 		if (i >= mesh.nChildren)
 			throw new IndexOutOfBoundsException();
 		if (children[i] == null) {
@@ -122,7 +122,7 @@ public abstract class DynamicMeshElement2 {
 	 *            parent index < nParents
 	 * @return the parent at index i
 	 */
-	public DynamicMeshElement2 getParent(int i) {
+	public DynamicMeshElement getParent(int i) {
 		if (parents[i] != null && parents[i].lastVersion != lastVersion)
 			parents[i].recalculate(lastVersion, true);
 
@@ -142,19 +142,19 @@ public abstract class DynamicMeshElement2 {
 		if (ignoreCull() || ignoreFlag)
 			return;
 
-		final CullInfo2 prev = cullInfo;
+		final CullInfo prev = cullInfo;
 
 		// update cull flag
 		cullInfo = getCullInfo();
 
 		// handle new culling info
-		if (prev != cullInfo || cullInfo == CullInfo2.SOMEIN) {
+		if (prev != cullInfo || cullInfo == CullInfo.SOMEIN) {
 		
 			// hide/show the element
-			setHidden(cullInfo == CullInfo2.OUT);
+			setHidden(cullInfo == CullInfo.OUT);
 			
 			// reinsert into priority queue
-			if (prev == CullInfo2.OUT || (cullInfo == CullInfo2.OUT
+			if (prev == CullInfo.OUT || (cullInfo == CullInfo.OUT
 					&& bucket_owner != null))
 				reinsertInQueue();
 		}
@@ -171,7 +171,7 @@ public abstract class DynamicMeshElement2 {
 	 * @return OUT if there's no overlap, ALLIN if the element is contained in
 	 *         the culling box, OUT otherwise
 	 */
-	private CullInfo2 getCullInfo() {
+	private CullInfo getCullInfo() {
 		final double[] cc = boundingBox;
 		final double[] bb = mesh.cullingBox;
 		if (cc[0] <= bb[1] && cc[2] <= bb[3] && cc[4] <= bb[5]
@@ -179,11 +179,11 @@ public abstract class DynamicMeshElement2 {
 			// we have intersection - check containment
 			if (cc[0] >= bb[0] && cc[2] >= bb[2] && cc[4] >= bb[4]
 					&& cc[1] <= bb[1] && cc[3] <= bb[3] && cc[5] <= bb[5]) {
-				return CullInfo2.ALLIN;
+				return CullInfo.ALLIN;
 			}
-			return CullInfo2.SOMEIN;
+			return CullInfo.SOMEIN;
 		}
-		return CullInfo2.OUT;
+		return CullInfo.OUT;
 	}
 
 	/**
@@ -239,7 +239,7 @@ public abstract class DynamicMeshElement2 {
 	 *            the parent that is trying to initiate the move
 	 * @return true if the element can be moved, otherwise false
 	 */
-	public boolean readyForMerge(DynamicMeshElement2 activeParent) {
+	public boolean readyForMerge(DynamicMeshElement activeParent) {
 		return true;
 	}
 

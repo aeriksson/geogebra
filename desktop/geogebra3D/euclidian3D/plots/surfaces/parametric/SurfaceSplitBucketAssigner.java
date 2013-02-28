@@ -1,17 +1,17 @@
 package geogebra3D.euclidian3D.plots.surfaces.parametric;
 
 import geogebra3D.euclidian3D.plots.BucketAssigner;
-import geogebra3D.euclidian3D.plots.DynamicMeshElement2;
+import geogebra3D.euclidian3D.plots.DynamicMeshElement;
 
 /**
  * A bucket assigner used for split operations. Sorts based on
  * SurfaceMeshDiamond.error.
  */
-class SurfaceSplitBucketAssigner2 implements
-		BucketAssigner<DynamicMeshElement2> {
+class SurfaceSplitBucketAssigner implements
+		BucketAssigner<DynamicMeshElement> {
 
 	public int getBucketIndex(Object o, int bucketAmt) {
-		SurfaceDiamond2 d = (SurfaceDiamond2) o;
+		SurfaceDiamond d = (SurfaceDiamond) o;
 		int bucket;
 		double e = d.getError();
 		int f = (int) (Math.exp(e + 1) * 200) + 3;

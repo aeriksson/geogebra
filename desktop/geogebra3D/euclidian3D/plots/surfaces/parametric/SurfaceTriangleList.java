@@ -1,9 +1,9 @@
 package geogebra3D.euclidian3D.plots.surfaces.parametric;
 
 import geogebra.common.kernel.Matrix.Coords;
-import geogebra3D.euclidian3D.plots.CullInfo2;
-import geogebra3D.euclidian3D.plots.DynamicMeshElement2;
-import geogebra3D.euclidian3D.plots.DynamicMeshTriList2;
+import geogebra3D.euclidian3D.plots.CullInfo;
+import geogebra3D.euclidian3D.plots.DynamicMeshElement;
+import geogebra3D.euclidian3D.plots.DynamicMeshTriangleList;
 import geogebra3D.euclidian3D.plots.TriangleList;
 import geogebra3D.euclidian3D.plots.TriangleListElement;
 
@@ -13,7 +13,7 @@ import java.util.LinkedList;
  * Triangle list used for parametric surfaces.
  * Assumes that the surface elements are diamonds.
  */
-class SurfaceTriList2 extends TriangleList implements DynamicMeshTriList2 {
+public class SurfaceTriangleList extends TriangleList implements DynamicMeshTriangleList {
 
 	private int currentVersion;
 	
@@ -29,14 +29,14 @@ class SurfaceTriList2 extends TriangleList implements DynamicMeshTriList2 {
 	 * @param marigin
 	 *            extra triangle amount
 	 */
-	SurfaceTriList2(int capacity, int marigin) {
+	SurfaceTriangleList(int capacity, int marigin) {
 		super(capacity, marigin, FLOATS_PER_CHUNK, true);
 	}
 
 	/**
 	 * Adds both triangles of an element.
 	 */
-	public void add(DynamicMeshElement2 e) {
+	public void add(DynamicMeshElement e) {
 		add(e, 0);
 		add(e, 1);
 	}
@@ -49,8 +49,8 @@ class SurfaceTriList2 extends TriangleList implements DynamicMeshTriList2 {
 	 * @param index
 	 *            The index of the triangle within the diamond
 	 */
-	public void add(DynamicMeshElement2 element, int index) {
-		SurfaceDiamond2 diamond = (SurfaceDiamond2) element;
+	public void add(DynamicMeshElement element, int index) {
+		SurfaceDiamond diamond = (SurfaceDiamond) element;
 
 		// handle clipping
 		if (triangleIsClipped(diamond, index))
@@ -71,7 +71,7 @@ class SurfaceTriList2 extends TriangleList implements DynamicMeshTriList2 {
 		newElement.setOwner(diamond);
 		diamond.setTriangle(index, newElement);
 
-		if (!ignoreElement && element.cullInfo == CullInfo2.OUT) {
+		if (!ignoreElement && element.cullInfo == CullInfo.OUT) {
 			hide(diamond, index);
 		}
 	}
@@ -124,9 +124,9 @@ class SurfaceTriList2 extends TriangleList implements DynamicMeshTriList2 {
 	/**
 	 * Returns the vertices corresponding to the given index as an array of floats. 
 	 */
-	private static float[] getVertexArray(SurfaceDiamond2 diamond, int index) {
+	private static float[] getVertexArray(SurfaceDiamond diamond, int index) {
 		float [] vertexBuffer = new float[9];
-		SurfaceDiamond2 diamonds[] = getDiamondsForIndex(diamond, index);
+		SurfaceDiamond diamonds[] = getDiamondsForIndex(diamond, index);
 		
 		for (int i = 0, c = 0; i < 3; i++, c += 3) {
 			Coords vertex = diamonds[i].getVertex(diamond);
@@ -141,9 +141,9 @@ class SurfaceTriList2 extends TriangleList implements DynamicMeshTriList2 {
 	/**
 	 * Returns the normals corresponding to the given index as an array of floats. 
 	 */
-	private static float[] getNormalArray(SurfaceDiamond2 diamond, int index) {
+	private static float[] getNormalArray(SurfaceDiamond diamond, int index) {
 		float [] normalBuffer = new float[9];
-		SurfaceDiamond2 diamonds[] = getDiamondsForIndex(diamond, index);
+		SurfaceDiamond diamonds[] = getDiamondsForIndex(diamond, index);
 		
 		for (int i = 0, c = 0; i < 3; i++, c += 3) {
 			Coords normal = diamonds[i].getNormal();
@@ -163,9 +163,9 @@ class SurfaceTriList2 extends TriangleList implements DynamicMeshTriList2 {
 		return normalBuffer;
 	}
 
-	private static SurfaceDiamond2 [] getDiamondsForIndex(SurfaceDiamond2 diamond, int index) {
-		SurfaceDiamond2 diamonds[] = new SurfaceDiamond2[3]; 
-		diamonds[1] = (SurfaceDiamond2) diamond.getParent(index);
+	private static SurfaceDiamond [] getDiamondsForIndex(SurfaceDiamond diamond, int index) {
+		SurfaceDiamond diamonds[] = new SurfaceDiamond[3]; 
+		diamonds[1] = (SurfaceDiamond) diamond.getParent(index);
 		if (index == 0) {
 			diamonds[0] = diamond.ancestors[0];
 			diamonds[2] = diamond.ancestors[1];
@@ -185,7 +185,7 @@ class SurfaceTriList2 extends TriangleList implements DynamicMeshTriList2 {
 	 *            the triangle index
 	 * @return true if successful, otherwise false
 	 */
-	public boolean hide(SurfaceDiamond2 diamond, int index) {
+	public boolean hide(SurfaceDiamond diamond, int index) {
 		TriangleListElement triangle = diamond.getTriangle(index);
 		
 		if (triangle == null || triangle.isEmpty) {
@@ -204,8 +204,8 @@ class SurfaceTriList2 extends TriangleList implements DynamicMeshTriList2 {
 	 *            the index of the triangle
 	 * @return true if successful, otherwise false
 	 */
-	public boolean show(DynamicMeshElement2 element, int index) {
-		SurfaceDiamond2 diamond = (SurfaceDiamond2) element;
+	public boolean show(DynamicMeshElement element, int index) {
+		SurfaceDiamond diamond = (SurfaceDiamond) element;
 
 		reinsert(diamond, currentVersion);
 
@@ -224,8 +224,8 @@ class SurfaceTriList2 extends TriangleList implements DynamicMeshTriList2 {
 	 * @param element
 	 *            the element to reinsert
 	 */
-	public void reinsert(DynamicMeshElement2 element, int version) {
-		SurfaceDiamond2 diamond = (SurfaceDiamond2) element;
+	public void reinsert(DynamicMeshElement element, int version) {
+		SurfaceDiamond diamond = (SurfaceDiamond) element;
 		diamond.recalculate(version, true);
 
 		if (diamond.updateInDrawList) {
@@ -240,7 +240,7 @@ class SurfaceTriList2 extends TriangleList implements DynamicMeshTriList2 {
 		}
 	}
 
-	private void reinsertTriangle(SurfaceDiamond2 diamond, int index) {
+	private void reinsertTriangle(SurfaceDiamond diamond, int index) {
 		float[] vertices = getVertexArray(diamond, index);
 		float[] normals = getNormalArray(diamond, index);
 		
@@ -257,7 +257,7 @@ class SurfaceTriList2 extends TriangleList implements DynamicMeshTriList2 {
 		}
 	}
 
-	public boolean remove(DynamicMeshElement2 e) {
+	public boolean remove(DynamicMeshElement e) {
 		boolean triangleRemoved = false;
 		triangleRemoved |= remove(e, 0);
 		triangleRemoved |= remove(e, 1);
@@ -272,8 +272,8 @@ class SurfaceTriList2 extends TriangleList implements DynamicMeshTriList2 {
 	 * @return True if the segment was removed, false if it wasn't in the
 	 *         list in the first place.
 	 */
-	public boolean remove(DynamicMeshElement2 element, int j) {
-		SurfaceDiamond2 diamond = (SurfaceDiamond2) element;
+	public boolean remove(DynamicMeshElement element, int j) {
+		SurfaceDiamond diamond = (SurfaceDiamond) element;
 
 		// handle clipping
 		if (triangleIsClipped(diamond, j))
@@ -293,8 +293,8 @@ class SurfaceTriList2 extends TriangleList implements DynamicMeshTriList2 {
 	 * @param index Index of the triangle.
 	 * @return True if the triangle is clipped; otherwise false.
 	 */
-	private static boolean triangleIsClipped(SurfaceDiamond2 diamond, int index) {
-		return diamond.ignoreFlag || ((SurfaceDiamond2) diamond.parents[index]).ignoreFlag;
+	private static boolean triangleIsClipped(SurfaceDiamond diamond, int index) {
+		return diamond.ignoreFlag || ((SurfaceDiamond) diamond.parents[index]).ignoreFlag;
 	}
 
 	/**
@@ -309,7 +309,7 @@ class SurfaceTriList2 extends TriangleList implements DynamicMeshTriList2 {
 		}
 		currentVersion = newVersionNumber;
 		
-		LinkedList<DynamicMeshElement2> list = updateElements(newVersionNumber);
+		LinkedList<DynamicMeshElement> list = updateElements(newVersionNumber);
 		
 		reinsertElements(list);
 	}
@@ -320,12 +320,12 @@ class SurfaceTriList2 extends TriangleList implements DynamicMeshTriList2 {
 	 * @param newVersionNumber The version number to update to.
 	 * @return A list of the elements whose version changed.
 	 */
-	private LinkedList<DynamicMeshElement2> updateElements(int newVersionNumber) {
+	private LinkedList<DynamicMeshElement> updateElements(int newVersionNumber) {
 		TriangleListElement currentElement = front;
-		LinkedList<DynamicMeshElement2> updatedElements = new LinkedList<DynamicMeshElement2>();
+		LinkedList<DynamicMeshElement> updatedElements = new LinkedList<DynamicMeshElement>();
 		
 		while (currentElement != null) {
-			DynamicMeshElement2 parent = (DynamicMeshElement2) currentElement.getOwner();
+			DynamicMeshElement parent = (DynamicMeshElement) currentElement.getOwner();
 			
 			if (parent.lastVersion != newVersionNumber) {
 				updatedElements.add(parent);
@@ -340,17 +340,17 @@ class SurfaceTriList2 extends TriangleList implements DynamicMeshTriList2 {
 	/**
 	 * Reinserts the elements in an iterable into the list.
 	 */
-	private void reinsertElements(Iterable<DynamicMeshElement2> iterable) {
-		for (DynamicMeshElement2 element: iterable) {
+	private void reinsertElements(Iterable<DynamicMeshElement> iterable) {
+		for (DynamicMeshElement element: iterable) {
 			reinsert(element, currentVersion);
 		}
 	}
 
-	public boolean hide(DynamicMeshElement2 t) {
+	public boolean hide(DynamicMeshElement t) {
 		throw new UnsupportedOperationException();
 	}
 
-	public boolean show(DynamicMeshElement2 t) {
+	public boolean show(DynamicMeshElement t) {
 		throw new UnsupportedOperationException();
 	}
 }

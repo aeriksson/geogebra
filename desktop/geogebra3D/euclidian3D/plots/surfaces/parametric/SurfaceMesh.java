@@ -6,7 +6,7 @@ import geogebra.common.kernel.kernelND.SurfaceEvaluable;
 import geogebra3D.euclidian3D.intersections.Octree;
 import geogebra3D.euclidian3D.intersections.OctreeCollection;
 import geogebra3D.euclidian3D.intersections.TriangleOctree;
-import geogebra3D.euclidian3D.plots.DynamicMesh2;
+import geogebra3D.euclidian3D.plots.DynamicMesh;
 import geogebra3D.euclidian3D.plots.FastBucketPriorityQueue;
 
 import java.nio.FloatBuffer;
@@ -14,7 +14,7 @@ import java.nio.FloatBuffer;
 /**
  * Mesh representing a function R^2->R^3
  */
-public class SurfaceMesh2 extends DynamicMesh2 implements OctreeCollection {
+public class SurfaceMesh extends DynamicMesh implements OctreeCollection {
 
 	private Octree octree;
 
@@ -40,7 +40,7 @@ public class SurfaceMesh2 extends DynamicMesh2 implements OctreeCollection {
 	/** a reference to the function being drawn */
 	private SurfaceEvaluable function;
 
-	private SurfaceDiamond2 root;
+	private SurfaceDiamond root;
 
 	/** desired maximum error */
 	private double desiredMaxError;
@@ -55,11 +55,11 @@ public class SurfaceMesh2 extends DynamicMesh2 implements OctreeCollection {
 	 * @param domain
 	 *            Function domain as {x_min, x_max, y_min, y_max}
 	 */
-	public SurfaceMesh2(SurfaceEvaluable function, double[] cullingBox,
+	public SurfaceMesh(SurfaceEvaluable function, double[] cullingBox,
 			double[] domain) {
-		super(new FastBucketPriorityQueue(new SurfaceSplitBucketAssigner2(), true),
-				new FastBucketPriorityQueue(new SurfaceSplitBucketAssigner2(), false),
-				new SurfaceTriList2(100, 0), 2, 4, maxLevel);
+		super(new FastBucketPriorityQueue(new SurfaceSplitBucketAssigner(), true),
+				new FastBucketPriorityQueue(new SurfaceSplitBucketAssigner(), false),
+				new SurfaceTriangleList(100, 0), 2, 4, maxLevel);
 		this.function = function;
 
 		setLevelOfDetail(5);
@@ -112,12 +112,12 @@ public class SurfaceMesh2 extends DynamicMesh2 implements OctreeCollection {
 	private void initMesh(double xMin, double xMax, double yMin, double yMax) {
 		int di, ix, jx;
 		double x, y;
-		SurfaceDiamond2 t;
+		SurfaceDiamond t;
 
 		// base diamonds at level 0
-		SurfaceDiamond2[][] base0 = new SurfaceDiamond2[4][4];
+		SurfaceDiamond[][] base0 = new SurfaceDiamond[4][4];
 		// base diamonds at lower levels
-		SurfaceDiamond2[][] base1 = new SurfaceDiamond2[4][4];
+		SurfaceDiamond[][] base1 = new SurfaceDiamond[4][4];
 
 		double dx = (xMax - xMin);
 		double dy = (yMax - yMin);
@@ -126,12 +126,12 @@ public class SurfaceMesh2 extends DynamicMesh2 implements OctreeCollection {
 			for (int j = 0; j < 4; j++) {
 				x = xMin + (i - 0.5) * dx;
 				y = yMin + (j - 0.5) * dy;
-				base0[j][i] = new SurfaceDiamond2(this, 0, x, y,
+				base0[j][i] = new SurfaceDiamond(this, 0, x, y,
 						!(i == 1 && j == 1), currentVersion);
 
 				x = xMin + (i - 1) * dx;
 				y = yMin + (j - 1) * dy;
-				base1[j][i] = t = new SurfaceDiamond2(this,
+				base1[j][i] = t = new SurfaceDiamond(this,
 						((i ^ j) & 1) != 0 ? -1 : -2, x, y, false,
 						currentVersion);
 				t.setSplit(true);
@@ -156,10 +156,10 @@ public class SurfaceMesh2 extends DynamicMesh2 implements OctreeCollection {
 				t.ancestors[1] = base1[jx][ix];
 
 				ix = (di < 0 ? 0 : 3);
-				((SurfaceDiamond2) t.parents[0]).setChild(ix, t);
+				((SurfaceDiamond) t.parents[0]).setChild(ix, t);
 				t.indices[0] = ix;
 				ix = (di < 0 ? 2 : 1);
-				((SurfaceDiamond2) t.parents[1]).setChild(ix, t);
+				((SurfaceDiamond) t.parents[1]).setChild(ix, t);
 				t.indices[1] = ix;
 			}
 		for (int i = 0; i < 4; i++)

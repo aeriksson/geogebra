@@ -1,13 +1,13 @@
 package geogebra3D.euclidian3D.plots.curves;
 
 import geogebra3D.euclidian3D.plots.BucketAssigner;
-import geogebra3D.euclidian3D.plots.DynamicMeshElement2;
+import geogebra3D.euclidian3D.plots.DynamicMeshElement;
 
 /**
  * A bucket assigner used for split operations.
  * Sorts based on the error of diamonds.
  */
-class CurveBucketAssigner implements BucketAssigner<DynamicMeshElement2> {
+class CurveBucketAssigner implements BucketAssigner<DynamicMeshElement> {
 
 	public int getBucketIndex(Object o, int bucketAmt) {
 		CurveSegment d = (CurveSegment) o;

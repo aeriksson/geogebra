@@ -3,7 +3,7 @@ package geogebra3D.euclidian3D.plots.surfaces.implicit;
 import geogebra.common.kernel.Matrix.Coords;
 import geogebra.common.kernel.geos.GeoFunctionNVar;
 import geogebra3D.euclidian3D.plots.BucketAssigner;
-import geogebra3D.euclidian3D.plots.DynamicMeshElement2;
+import geogebra3D.euclidian3D.plots.DynamicMeshElement;
 import geogebra3D.euclidian3D.plots.FastBucketPriorityQueue;
 import geogebra3D.euclidian3D.plots.TriangleList;
 import geogebra3D.euclidian3D.plots.TriangleListElement;
@@ -129,7 +129,7 @@ class MCElement {
 /**
  * A triangle in the marching cubes implementation
  */
-class MCTriangle extends DynamicMeshElement2 {
+class MCTriangle extends DynamicMeshElement {
 	
 	/** The three adjacent triangles in the mesh */
 	MCTriangle[] neighbors = new MCTriangle[3];
@@ -3259,7 +3259,7 @@ class MCTriList extends TriangleList {
 
 }
 
-class MCAssigner implements BucketAssigner<DynamicMeshElement2> {
+class MCAssigner implements BucketAssigner<DynamicMeshElement> {
 
 	public int getBucketIndex(Object o, int bucketAmt) {
 		MCTriangle d = (MCTriangle) o;
@@ -3412,24 +3412,6 @@ class MCROAM {
 			link(d0, d1);
 		}
 
-		// assert
-		/*
-		 * if(b==a.neighbors[0]){ verifyNeighbors(d0,a.neighbors[2]);
-		 * verifyNeighbors(d1,a.neighbors[1]); verifyNeighbors(d1,c0);
-		 * verifyNeighbors(c1,d0); verifyNeighbors(d1,d0);
-		 * if(a.neighbors[1].hasNeighbor(a)) System.out.println("error");
-		 * if(a.neighbors[2].hasNeighbor(a)) System.out.println("error"); } else
-		 * if(b==a.neighbors[1]){ verifyNeighbors(d,d1); verifyNeighbors(d1,d0);
-		 * verifyNeighbors(d0,c1); verifyNeighbors(d1,c0);
-		 * if(!d0.hasNeighbor(c1)); if(a.neighbors[2]!=null){
-		 * verifyNeighbors(d,a.neighbors[2]); if(a.neighbors[2].hasNeighbor(a))
-		 * System.out.println("error"); } } else if(b==a.neighbors[2]){
-		 * verifyNeighbors(d,d0); verifyNeighbors(d1,d0);
-		 * verifyNeighbors(d0,c1); verifyNeighbors(d1,c0);
-		 * if(a.neighbors[1]!=null){ verifyNeighbors(d,a.neighbors[1]);
-		 * if(a.neighbors[1].hasNeighbor(a)) System.out.println("error"); } }
-		 */
-
 		// recurse
 		if (b != a.neighbors[0]) {
 			if (b == a.neighbors[1])
@@ -3442,12 +3424,6 @@ class MCROAM {
 
 		// remove from drawing list
 		triList.remove(a);
-	}
-
-	@SuppressWarnings("unused")
-	private void verifyNeighbors(MCTriangle t1, MCTriangle t2) {
-		if (!t1.hasNeighbor(t2) || !t2.hasNeighbor(t1))
-			System.out.println("error");
 	}
 
 	/**
