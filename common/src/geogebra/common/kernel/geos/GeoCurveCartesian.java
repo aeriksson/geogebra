@@ -573,7 +573,7 @@ public class GeoCurveCartesian extends GeoCurveCartesianND implements
 				sbTemp.append(funY.toLaTeXString(symbolic, tpl));
 				sbTemp.append(" \\end{array}");
 				if (!hideRangeInFormula) {
-					sbTemp.append("\\right} \\; ");
+					sbTemp.append("\\right\\} \\; ");
 					sbTemp.append(kernel.format(startParam, tpl));
 					sbTemp.append(" \\le ");
 					sbTemp.append(param);
@@ -619,7 +619,7 @@ public class GeoCurveCartesian extends GeoCurveCartesianND implements
 
 		// if kernel doesn't use path/region parameters, do as if point changed
 		// its coords
-		pathChanged(PI,!getKernel().usePathAndRegionParameters(this));
+		pathChanged(PI,!getKernel().usePathAndRegionParameters(PI));
 
 	}
 	

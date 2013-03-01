@@ -4252,43 +4252,39 @@ public class ExpressionNode extends ValidExpression implements
 			}
 			break;
 		case IF:
-			if (stringType == StringType.LATEX|| tpl.isPrintLocalizedCommandNames()) {
-				sb.append("If[");
+			if (stringType == StringType.MPREDUCE) {
+				sb.append("iffun(");
+			}
+			else {
+				if (tpl.isPrintLocalizedCommandNames()) {
+					sb.append(app.getLocalization().getCommand("If"));
+				}else{
+					sb.append("If");
+				}
+				sb.append("[");
 				sb.append(leftStr);
 				sb.append(",");
 				sb.append(rightStr);
 				sb.append("]");
-			} else {
-				if (stringType == StringType.MPREDUCE) {
-					sb.append("iffun(");
-				} else {
-					sb.append("gGbIfElSe(");
-				}
-				sb.append(leftStr);
-				sb.append(',');
-				sb.append(rightStr);
-				sb.append(")");
 			}
 			break;	
 		case IF_ELSE:
-			if (stringType == StringType.LATEX || tpl.isPrintLocalizedCommandNames()) {
-				sb.append("If[");
+			if (stringType == StringType.MPREDUCE) {
+				sb.append("ifelsefun(");
+			}
+			else {
+				if (tpl.isPrintLocalizedCommandNames()) {
+					sb.append(app.getLocalization().getCommand("If"));
+				}else{
+					sb.append("If");
+				}
+				sb.append("[");
 				sb.append(leftStr);
 				sb.append(",");
 				sb.append(rightStr);
 				sb.append("]");
-			} else {
-				if (stringType == StringType.MPREDUCE) {
-					sb.append("ifelsefun(");
-				} else {
-					sb.append("gGbIfElSe(");
-				}
-				sb.append(leftStr);
-				sb.append(',');
-				sb.append(rightStr);
-				sb.append(")");
 			}
-			break;	
+			break;
 			
 			
 		default:
@@ -5072,6 +5068,7 @@ public class ExpressionNode extends ValidExpression implements
 	}
 
 	/**
+	 * @param n order of polygamma
 	 * @return result of polyganma(n, this)
 	 */
 	public ExpressionNode polygamma(double n) {
@@ -6173,10 +6170,19 @@ public class ExpressionNode extends ValidExpression implements
 		return new ExpressionNode(ev.getKernel(), ev, Operation.NO_OPERATION, null);
 	}
 	
+	/**
+	 * @return whether the top-level operation is IF / IF_ELSE
+	 */
 	public boolean isConditional(){
 		return operation == Operation.IF || operation == Operation.IF_ELSE;
 	}
 
+	/**
+	 * Builds an if-else expression based on this condition
+	 * @param ifBranch if branch
+	 * @param elseBranch else branch
+	 * @return if-else expression
+	 */
 	public ExpressionNode ifElse(ExpressionValue ifBranch, ExpressionValue elseBranch) {
 		return new ExpressionNode(kernel,new MyNumberPair(kernel,this,ifBranch),Operation.IF_ELSE,elseBranch);
 	}

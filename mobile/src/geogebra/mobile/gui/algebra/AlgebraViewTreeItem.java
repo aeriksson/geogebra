@@ -17,10 +17,7 @@ import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.MouseDownEvent;
 import com.google.gwt.event.dom.client.MouseDownHandler;
-import com.google.gwt.event.logical.shared.ValueChangeEvent;
-import com.google.gwt.event.logical.shared.ValueChangeHandler;
 import com.google.gwt.user.client.DOM;
-import com.google.gwt.user.client.ui.CheckBox;
 import com.google.gwt.user.client.ui.HasHorizontalAlignment;
 import com.google.gwt.user.client.ui.HasVerticalAlignment;
 import com.google.gwt.user.client.ui.HorizontalPanel;
@@ -49,7 +46,7 @@ public class AlgebraViewTreeItem extends HorizontalPanel implements ClickHandler
 	SpanElement seMayLatex;
 	SpanElement seNoLatex;
 
-	CheckBox check;
+	Marble marble;
 	InlineHTML ihtml;
 	TextBox tb;
 
@@ -64,23 +61,25 @@ public class AlgebraViewTreeItem extends HorizontalPanel implements ClickHandler
 		setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
 		setVerticalAlignment(HasVerticalAlignment.ALIGN_MIDDLE);
 
-		this.check = new CheckBox();
-		AlgebraViewTreeItem.this.previouslyChecked = ge.isEuclidianVisible();
-		
-		this.check.setValue(new Boolean(AlgebraViewTreeItem.this.previouslyChecked), false);
+		this.marble = new Marble();
+		this.previouslyChecked = ge.isEuclidianVisible();
 
-		this.check.addValueChangeHandler(new ValueChangeHandler<Boolean>()
+		this.marble.setchecked(this.previouslyChecked);
+		
+		this.marble.addDomHandler(new ClickHandler()
 		{
 			@Override
-			public void onValueChange(ValueChangeEvent<Boolean> event)
+			public void onClick(ClickEvent event)
 			{
 				AlgebraViewTreeItem.this.geo.setEuclidianVisible(!AlgebraViewTreeItem.this.geo.isSetEuclidianVisible());
 				AlgebraViewTreeItem.this.geo.update();
 				AlgebraViewTreeItem.this.geo.getKernel().getApplication().storeUndoInfo();
 				AlgebraViewTreeItem.this.geo.getKernel().notifyRepaint();
+				
+				AlgebraViewTreeItem.this.marble.setchecked(AlgebraViewTreeItem.this.geo.isEuclidianVisible());
 			}
-		});
-		add(this.check);
+		}, ClickEvent.getType());
+		add(this.marble);
 
 		SpanElement se = DOM.createSpan().cast();
 		se.getStyle().setProperty("display", "-moz-inline-box");
@@ -127,7 +126,7 @@ public class AlgebraViewTreeItem extends HorizontalPanel implements ClickHandler
 			String latexStr = this.geo.getLaTeXAlgebraDescription(true, StringTemplate.latexTemplate);
 			if ((latexStr != null) && this.geo.isLaTeXDrawableGeo() && (this.geo.isGeoList() ? !((GeoList) this.geo).isMatrix() : true))
 			{
-				latexStr = inputLatexCosmetics(latexStr);
+				latexStr =  DrawEquationWeb.inputLatexCosmetics(latexStr);
 				this.seMayLatex = se;
 				DrawEquationWeb.drawEquationAlgebraView(this.seMayLatex, latexStr, this.geo.getAlgebraColor(), GColor.white);
 				this.LaTeX = true;
@@ -147,8 +146,8 @@ public class AlgebraViewTreeItem extends HorizontalPanel implements ClickHandler
 
 	public void update()
 	{
-		this.check.setValue(this.geo.isEuclidianVisible()); 
-		
+		this.marble.setchecked(AlgebraViewTreeItem.this.geo.isEuclidianVisible());
+
 		// check for new LaTeX
 		boolean newLaTeX = false;
 		String text = null;
@@ -200,7 +199,7 @@ public class AlgebraViewTreeItem extends HorizontalPanel implements ClickHandler
 		// now we have text and how to display it (newLaTeX/LaTeX)
 		if (this.LaTeX && newLaTeX)
 		{
-			text = inputLatexCosmetics(text);
+			text = DrawEquationWeb.inputLatexCosmetics(text);
 			// FIXME what does "noEqnArray" do?
 			DrawEquationWeb.updateEquationMathQuill(text, this.seMayLatex, false);
 		}
@@ -215,7 +214,7 @@ public class AlgebraViewTreeItem extends HorizontalPanel implements ClickHandler
 			se.getStyle().setDisplay(Style.Display.INLINE_BLOCK);
 			se.getStyle().setColor(GColor.getColorString(this.geo.getAlgebraColor()));
 			this.ihtml.getElement().replaceChild(se, this.seNoLatex);
-			text = inputLatexCosmetics(text);
+			text = DrawEquationWeb.inputLatexCosmetics(text);
 			this.seMayLatex = se;
 			DrawEquationWeb.drawEquationAlgebraView(this.seMayLatex, text, this.geo.getAlgebraColor(), GColor.white);
 			this.LaTeX = true;
@@ -250,34 +249,7 @@ public class AlgebraViewTreeItem extends HorizontalPanel implements ClickHandler
 		// }
 	}
 
-	public static String inputLatexCosmetics(String eqstring)
-	{
-		// make sure eg FractionText[] works (surrounds with {} which doesn't
-		// draw
-		// well in MathQuill)
-
-		String str = new String(eqstring);
-		if (str.length() >= 2)
-			if (str.startsWith("{") && str.endsWith("}"))
-			{
-				str = str.substring(1, str.length() - 1);
-			}
-
-		// remove $s
-		str = str.trim();
-		while (str.startsWith("$"))
-			str = str.substring(1).trim();
-		while (str.endsWith("$"))
-			str = str.substring(0, str.length() - 1).trim();
-
-		// remove all \; and \,
-		str = str.replace("\\;", "");
-		str = str.replace("\\,", "");
-
-		str = str.replace("\\left\\{", "\\lbrace");
-		str = str.replace("\\right\\}", "\\rbrace");
-		return str;
-	}
+	
 
 	public void startEditing()
 	{

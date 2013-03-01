@@ -26,6 +26,7 @@ import java.util.ArrayList;
 
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.event.dom.client.KeyUpEvent;
 
 /**
  * 
@@ -82,12 +83,29 @@ public class MobileModel
 	}
 
 	/**
-	 * selects the given element or desects it in case it is selected
+	 * selects the given element
 	 * 
 	 * @param geo
 	 *            the element to be selected
 	 */
 	public void select(GeoElement geo)
+	{
+		if (geo == null || this.selectedElements.indexOf(geo) != -1)
+		{
+			return;
+		}
+
+		geo.setSelected(true);
+		this.selectedElements.add(geo);
+	}
+	
+	/**
+	 * selects the given element or deselects it in case it is selected
+	 * 
+	 * @param geo
+	 *            the element to be selected or deselected
+	 */
+	public void changeSelectionState(GeoElement geo)
 	{
 		if (geo == null)
 		{
@@ -124,7 +142,7 @@ public class MobileModel
 		{
 			if (i < h.size())
 			{
-				select(h.get(i));
+				changeSelectionState(h.get(i));
 				success = true;
 			}
 		}
@@ -151,7 +169,7 @@ public class MobileModel
 			hits.getHits(geoclass[i], h);
 			if (h.size() > 0)
 			{
-				select(h.get(0));
+				changeSelectionState(h.get(0));
 				return true;
 			}
 		}
@@ -421,7 +439,7 @@ public class MobileModel
 		case ReflectObjectAboutLine:
 			if (!select(hits, Test.GEOLINE, 1) && hits.size() > 0)
 			{
-				select(hits.get(0));
+				changeSelectionState(hits.get(0));
 			}
 			draw = getNumberOf(Test.GEOLINE) >= 1 && getTotalNumber() >= 2;
 			break;
@@ -438,7 +456,7 @@ public class MobileModel
 		case ReflectObjectAboutPoint:
 			if (!select(hits, Test.GEOPOINT, 1) && hits.size() > 0)
 			{
-				select(hits.get(0));
+				changeSelectionState(hits.get(0));
 			}
 			draw = getNumberOf(Test.GEOPOINT) >= 1 && getTotalNumber() >= 2;
 			break;
@@ -447,7 +465,7 @@ public class MobileModel
 		case TranslateObjectByVector:
 			if (!select(hits, Test.GEOVECTOR, 1) && hits.size() > 0)
 			{
-				select(hits.get(0));
+				changeSelectionState(hits.get(0));
 			}
 			draw = getNumberOf(Test.GEOVECTOR) >= 1 && getTotalNumber() >= 2;
 			break;
@@ -567,7 +585,7 @@ public class MobileModel
 					}
 				} else
 				{
-					select(geo);
+					changeSelectionState(geo);
 				}
 			}
 			this.changeColorAllowed = true;
@@ -577,6 +595,7 @@ public class MobileModel
 			{
 				geo.remove();
 			}
+			this.commandFinished = true; 
 			break;
 
 		default:
@@ -861,6 +880,7 @@ public class MobileModel
 						MobileModel.this.kernel.notifyRepaint();
 						MobileModel.this.guiModel
 								.updateStylingBar(MobileModel.this);
+						MobileModel.this.kernel.storeUndoInfo();
 					}
 				});
 				this.controlClicked = false;
@@ -893,7 +913,7 @@ public class MobileModel
 				{
 					newElements.add(geo);
 				}
-				break;
+				break; 
 			default:
 			}
 
@@ -910,7 +930,6 @@ public class MobileModel
 		}
 
 		this.kernel.setNotifyRepaintActive(true); //includes a repaint
-		//this.kernel.notifyRepaint();
 
 		if (this.commandFinished)
 		{
@@ -959,26 +978,30 @@ public class MobileModel
 			{
 				this.kernel.getAlgoDispatcher().detach(point, view);
 				resetSelection();
-				select(point);
+				changeSelectionState(point);
 				this.commandFinished = true;
 			} else if (region != null) // attach to region
 			{
 				this.kernel.getAlgoDispatcher().attach(point, region, view,
 						p.getX(), p.getY());
 				resetSelection();
-				select(point);
+				changeSelectionState(point);
 				this.commandFinished = true;
 			} else if (path != null) // attach to path
 			{
 				this.kernel.getAlgoDispatcher().attach(point, path, view,
 						p.getX(), p.getY());
 				resetSelection();
-				select(point);
+				changeSelectionState(point);
 				this.commandFinished = true;
 			}
 		}
 	}
-
+	
+	private void stopCollecting(){
+		this.kernel.getApplication().getEuclidianView1().getEuclidianController().stopCollectingMinorRepaints();
+	}
+	
 	/**
 	 * @see geogebra.web.gui.inputbar.AlgebraInputW#onKeyUp(KeyUpEvent event)
 	 * 
@@ -994,7 +1017,7 @@ public class MobileModel
 			{
 				return;
 			}
-
+			this.kernel.getApplication().getEuclidianView1().getEuclidianController().startCollectingMinorRepaints();
 			// this.app.setScrollToShow(true);
 			GeoElement[] geos;
 			try
@@ -1022,10 +1045,12 @@ public class MobileModel
 				}
 			} catch (Exception e)
 			{
+				stopCollecting();
 				e.printStackTrace();
 				return;
 			} catch (MyError e)
 			{
+				stopCollecting();
 				e.printStackTrace();
 				return;
 			}
@@ -1062,10 +1087,12 @@ public class MobileModel
 					}
 				}
 			}
+			stopCollecting();
 			// this.app.setScrollToShow(false);
 
 		} catch (Exception e)
 		{
+			stopCollecting();
 			e.printStackTrace();
 		}
 	}

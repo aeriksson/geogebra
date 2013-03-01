@@ -24,6 +24,7 @@ import geogebra.common.kernel.commands.CommandsConstants;
 import geogebra.common.kernel.geos.GeoElement;
 import geogebra.common.kernel.geos.GeoNumeric;
 import geogebra.common.kernel.kernelND.ViewCreator;
+import geogebra.common.main.SelectionManager;
 import geogebra.euclidian.EuclidianControllerD;
 import geogebra.gui.GuiManagerD;
 import geogebra.gui.app.GeoGebraFrame3D;
@@ -90,6 +91,7 @@ public class App3D extends AppD {
 	public void initKernel() {
 		kernel3D = new Kernel3D(this);
 		kernel = kernel3D;
+		selection = new SelectionManager(kernel,this);
 	}
 
 	@Override
@@ -457,6 +459,10 @@ public class App3D extends AppD {
 	 * remove all euclidian views for plane
 	 */
 	public void removeAllEuclidianViewForPlane(){
+		
+		if (euclidianViewForPlaneList==null)
+			return;
+		
 		for (EuclidianViewForPlane view : euclidianViewForPlaneList)
 			view.removeFromGuiAndKernel();
 		

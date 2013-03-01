@@ -1,22 +1,18 @@
 package geogebra.mobile.gui.algebra;
 
+import geogebra.common.gui.view.algebra.AlgebraView;
 import geogebra.common.kernel.Kernel;
-import geogebra.mobile.ClientFactory;
 import geogebra.mobile.controller.MobileController;
 import geogebra.mobile.gui.CommonResources;
 import geogebra.mobile.gui.elements.header.HeaderImageButton;
-import geogebra.mobile.place.TabletGuiPlace;
 
 import org.vectomatic.dom.svg.ui.SVGResource;
 
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.ui.ScrollPanel;
-import com.googlecode.mgwt.dom.client.event.tap.TapEvent;
 import com.googlecode.mgwt.dom.client.event.tap.TapHandler;
-import com.googlecode.mgwt.dom.client.recognizer.swipe.SwipeEndEvent;
 import com.googlecode.mgwt.dom.client.recognizer.swipe.SwipeEndHandler;
-import com.googlecode.mgwt.dom.client.recognizer.swipe.SwipeEvent.DIRECTION;
 import com.googlecode.mgwt.ui.client.widget.LayoutPanel;
 import com.googlecode.mgwt.ui.client.widget.touch.TouchDelegate;
 
@@ -27,7 +23,7 @@ import com.googlecode.mgwt.ui.client.widget.touch.TouchDelegate;
 
 public class AlgebraViewPanel extends LayoutPanel
 {
-	protected ScrollPanel scrollPanel;
+	protected AlgebraScrollPanel scrollPanel;
 	protected AlgebraViewM algebraView;
 	HeaderImageButton button = new HeaderImageButton();
 
@@ -40,50 +36,6 @@ public class AlgebraViewPanel extends LayoutPanel
 	public AlgebraViewPanel()
 	{
 		this.addStyleName("algebraview");
-
-		TouchDelegate touchDelegate = new TouchDelegate(this);
-
-		touchDelegate.addTapHandler(new TapHandler()
-		{
-
-			/**
-			 * If there is a tap on the {@link AlgebraViewPanel} and it is collapsed,
-			 * the panel gets extended.
-			 * 
-			 * @param event
-			 *          Event
-			 */
-			@Override
-			public void onTap(TapEvent event)
-			{
-				if (AlgebraViewPanel.this.small)
-				{
-					extend();
-				}
-			}
-		});
-
-		touchDelegate.addSwipeEndHandler(new SwipeEndHandler()
-		{
-
-			/**
-			 * The {@link AlgebraViewPanel} extends if there is a swipe from left to
-			 * right and collapses if there is a swipe form right to left.
-			 */
-			@Override
-			public void onSwipeEnd(SwipeEndEvent event)
-			{
-				if (event.getDirection() == DIRECTION.LEFT_TO_RIGHT)
-				{
-					extend();
-				}
-				else if (event.getDirection() == DIRECTION.RIGHT_TO_LEFT)
-				{
-					minimize();
-				}
-			}
-		});
-
 	}
 
 	/**
@@ -124,7 +76,7 @@ public class AlgebraViewPanel extends LayoutPanel
 		this.algebraView = new AlgebraViewM(controller);
 		kernel.attach(this.algebraView);
 
-		this.scrollPanel = new ScrollPanel(this.algebraView);
+		this.scrollPanel = new AlgebraScrollPanel(this.algebraView);
 		this.scrollPanel.addStyleName("algebraScrollPanel");
 		add(this.scrollPanel);
 

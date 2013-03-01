@@ -270,8 +270,7 @@ public class AutoCompleteTextFieldW extends HorizontalPanel implements AutoCompl
 
 
 	public void showPopupSymbolButton(boolean b) {
-	    App.debug("implementation needed"); //TODO Auto-generated
-	    
+		setShowSymbolTableIcon(b);
     }
 	
 	/**
@@ -393,13 +392,11 @@ public class AutoCompleteTextFieldW extends HorizontalPanel implements AutoCompl
     }
 
 	public void setForeground(GColor color) {
-	    App.debug("implementation needed"); //TODO Auto-generated
-	    
+	    drawTextField.getLabel().setForeground(color);
     }
 
 	public void setBackground(GColor color) {
-	    App.debug("implementation needed"); //TODO Auto-generated
-	    
+	    textField.getElement().getStyle().setBackgroundColor(color.toString());
     }
 
 	public void setFocusable(boolean b) {
@@ -423,8 +420,7 @@ public class AutoCompleteTextFieldW extends HorizontalPanel implements AutoCompl
     }
 
 	public void setColumns(int length) {
-	  //AG getTextBox().setWidth(length+"px");
-		App.debug("AutoCompleteTextField.setColumns called");
+		getTextBox().setWidth(length+"em");
     }
 	
 	 public String getCurrentWord() {
@@ -1093,7 +1089,7 @@ public class AutoCompleteTextFieldW extends HorizontalPanel implements AutoCompl
 		//temp
 		//TODO: don't fix the popup button here, but it should appear if mouse clicked into the textfield.
 		String display = (showSymbolTableIcon) ? "block" : "none";
-		showSymbolButton.getElement().setAttribute("style", "display: "+display);
+		showSymbolButton.getElement().setAttribute("display", display);
 	}
 
 	private SymbolTablePopupW getTablePopup() {
@@ -1177,7 +1173,8 @@ public class AutoCompleteTextFieldW extends HorizontalPanel implements AutoCompl
 				if (id!=null){
 					Element element = DOM.getElementById(id+"_SymbolButton");
 					if (element != null){
-						if (show || element.getClassName().indexOf("ShowSymbolButtonFocused") < 0) {
+						if ((element.getAttribute("display") != "none") &&
+						 (show || element.getClassName().indexOf("ShowSymbolButtonFocused") < 0)) {
 							String display = (show)? "block" : "none";
 							element.setAttribute("style", "display: "+display);
 						}
@@ -1198,8 +1195,8 @@ public class AutoCompleteTextFieldW extends HorizontalPanel implements AutoCompl
 	  public void requestFocus() {
 		  textField.setFocus(true);
 		  if (geoUsedForInputBox != null && !geoUsedForInputBox.isSelected()) {
-			  app.clearSelectedGeos(false);
-			  app.addSelectedGeo(geoUsedForInputBox);
+			  app.getSelectionManager().clearSelectedGeos(false);
+			  app.getSelectionManager().addSelectedGeo(geoUsedForInputBox);
 		  }
 	  }
 

@@ -3,6 +3,7 @@ package geogebra.web.helper;
 import geogebra.common.GeoGebraConstants;
 import geogebra.common.main.App;
 import geogebra.web.Web;
+import geogebra.web.gui.app.GeoGebraAppFrame;
 import geogebra.web.gui.util.GeoGebraFileChooser;
 import geogebra.web.main.AppW;
 import geogebra.web.presenter.LoadFilePresenter;
@@ -20,6 +21,11 @@ import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 
 public class MyGoogleApis {
+	
+	private static boolean firstLogin = true;
+	
+	public static boolean loggedIn = false;
+	public static boolean driveLoaded = false;
 	
 	public static AuthRequest createNewAuthRequest() {
 		return new AuthRequest(GeoGebraConstants.GOOGLE_AUTH_URL, GeoGebraConstants.GOOGLE_CLIENT_ID)
@@ -154,6 +160,88 @@ public class MyGoogleApis {
 	    	var chooser = fileChooser;
 	    	@geogebra.web.helper.MyGoogleApis::putNewFileToGoogleDrive(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lgeogebra/web/gui/util/GeoGebraFileChooser;)(fName,ds,base64,chooser);
 	    };
+    }-*/;
+
+	public static boolean signedInToGoogle() {
+	    //AuthRequest r = createNewAuthRequest();
+	    //if (Web.AUTH.expiresIn(r) > 0) {
+	    //	return true;
+	    //}
+	    return MyGoogleApis.loggedIn;
+	}
+
+	public native static void loadGoogleDrive() /*-{
+	    $wnd.gapi.client.load('drive', 'v2', function() {
+	     @geogebra.web.helper.MyGoogleApis::driveLoaded = true;
+        });
+    }-*/;
+	
+	public native static void loginToGoogle() /*-{
+		var config = {'client_id': 	@geogebra.common.GeoGebraConstants::GOOGLE_CLIENT_ID,
+	            	'scope': 	@geogebra.common.GeoGebraConstants::DRIVE_SCOPE + " " +
+	            				@geogebra.common.GeoGebraConstants::USERINFO_EMAIL_SCOPE + " " +
+	            				@geogebra.common.GeoGebraConstants::USERINFO_PROFILE_SCOPE + " " +
+	            				@geogebra.common.GeoGebraConstants::PLUS_ME_SCOPE,
+	            	 'immediate': false};
+	    if (!@geogebra.web.helper.MyGoogleApis::firstLogin) {
+	    	config.max_auth_age = 0;
+	    }
+		$wnd.gapi.auth.authorize(config,
+	            	 function (resp) {
+	            	 	if (!resp.error) {
+	            	 		@geogebra.web.helper.MyGoogleApis::setUserEmailAfterLogin()();
+	            	 	}
+	            	 }
+	       );
+	}-*/;
+	
+	private static native void setUserEmailAfterLogin() /*-{
+		$wnd.gapi.client.load('oauth2', 'v2', function() {
+          			var request = $wnd.gapi.client.oauth2.userinfo.get();
+					request.execute(
+						function(resp) {
+							if (resp.email) {
+								@geogebra.web.gui.menubar.GeoGebraMenubarW::setLoggedIntoGoogle(Ljava/lang/String;Ljava/lang/String;)(resp.name, resp.email);
+								@geogebra.web.helper.MyGoogleApis::loggedIn = true;
+							}
+						}
+					)
+		});	
+	}-*/;
+
+	public static native void clearAllTokens() /*-{
+	    @geogebra.web.helper.MyGoogleApis::firstLogin = false;
+	    @geogebra.web.helper.MyGoogleApis::loggedIn = false;
+    }-*/;
+	
+	private static void processGoogleDriveFileContent(String base64) {
+		GeoGebraAppFrame.fileLoader.process(base64);
+	}
+
+	public static native void loadFromGoogleFile(String currentFileName) /*-{
+		
+		
+		function downloadFile(downloadUrl, callback) {
+		  if (downloadUrl) {
+		    var accessToken = $wnd.gapi.auth.getToken().access_token;
+		    var xhr = new $wnd.XMLHttpRequest();
+		    xhr.open('GET', downloadUrl);
+		    xhr.setRequestHeader('Authorization', 'Bearer ' + accessToken);
+		    xhr.onload = function() {
+		      callback(xhr.responseText);
+		    };
+		    xhr.onerror = function() {
+		      callback(null);
+		    };
+		    xhr.send();
+		  } else {
+		    callback(null);
+		  }
+		}
+		
+		downloadFile(currentFileName,function (base64) {
+			@geogebra.web.helper.MyGoogleApis::processGoogleDriveFileContent(Ljava/lang/String;)(base64);
+		});
     }-*/;
 
 }

@@ -1608,3 +1608,31 @@ body[dir=rtl] .GeoGebraMenuBar table{
 .menuTitle{
 	font-weight: bold;
 }
+
+.filesPanel {
+	width: 100%;
+	padding: 20px;
+	position: relative;
+}
+
+.ggbfilelink {
+	display : block;
+	text-decoration : underline;
+	cursor : pointer;
+	padding : 2px 0 2px 20px;
+	background : white url("images/ggb-logo-16x16-white.png") no-repeat left center;
+}
+
+.ggbfilelink.selected, .ggbfilelink:hover {
+	background-color: #E3E8F3;
+}
+
+/*
+Paddings for menuitems.
+*/
+.gwt-MenuBar-vertical .mi_no_image {
+	padding-left: 41px;
+}
+.gwt-MenuBar-vertical .mi_with_image {
+	padding-left: 21px;
+}

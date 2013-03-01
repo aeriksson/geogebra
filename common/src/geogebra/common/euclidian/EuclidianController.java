@@ -40,6 +40,7 @@ import geogebra.common.kernel.algos.AlgoElement;
 import geogebra.common.kernel.algos.AlgoFunctionFreehand;
 import geogebra.common.kernel.algos.AlgoJoinPointsSegment;
 import geogebra.common.kernel.algos.AlgoMidpoint;
+import geogebra.common.kernel.algos.AlgoPointInRegionFree;
 import geogebra.common.kernel.algos.AlgoPolarLine;
 import geogebra.common.kernel.algos.AlgoPolyLine;
 import geogebra.common.kernel.algos.AlgoPolygon;
@@ -104,6 +105,7 @@ import geogebra.common.main.App;
 import geogebra.common.main.DialogManager;
 import geogebra.common.main.GeoElementSelectionListener;
 import geogebra.common.main.Localization;
+import geogebra.common.main.SelectionManager;
 import geogebra.common.plugin.EuclidianStyleConstants;
 import geogebra.common.plugin.GeoClass;
 import geogebra.common.plugin.Operation;
@@ -309,6 +311,8 @@ public abstract class EuclidianController {
 
 	protected final App app;
 	
+	protected final SelectionManager selection;
+	
 	protected final Localization l10n;
 
 	protected Kernel kernel;
@@ -341,6 +345,7 @@ public abstract class EuclidianController {
 
 	public EuclidianController(App app){
 		this.app = app;
+		this.selection = app.getSelectionManager();
 		this.l10n = app.getLocalization();
 	}
 	/**
@@ -655,7 +660,7 @@ public abstract class EuclidianController {
 		selectionList.clear();
 		selectedGeos.clear();
 		if (doUpdateSelection) {
-			app.clearSelectedGeos();
+			selection.clearSelectedGeos();
 		}
 
 		view.repaintView();
@@ -1304,7 +1309,7 @@ public abstract class EuclidianController {
 					}
 				}
 				if (ret != 0) {
-					app.toggleSelectedGeo((GeoElement)geo);
+					selection.toggleSelectedGeo((GeoElement)geo);
 				}
 				return ret;
 			}
@@ -1736,6 +1741,7 @@ public abstract class EuclidianController {
 		return handleAddSelected(hits, max, addMoreThanOneAllowed,
 				selectedGeos, Test.GEOELEMENT);
 	}
+
 
 	protected final int addSelectedPoint(Hits hits, int max,
 			boolean addMoreThanOneAllowed) {
@@ -3099,11 +3105,11 @@ public abstract class EuclidianController {
 			}
 			// there were no appropriate selected elements
 			// set movedGeoElement
-			app.addSelectedGeo(geo);
+			selection.addSelectedGeo(geo);
 		} else {
 			if (geo == app.getGeoForCopyStyle()) {
 				// deselect
-				app.removeSelectedGeo(geo);
+				selection.removeSelectedGeo(geo);
 				app.setGeoForCopyStyle(null);
 				if (toggleModeChangedKernel) {
 					app.storeUndoInfo();
@@ -3299,7 +3305,7 @@ public abstract class EuclidianController {
 				}
 				app.updateMenubar();
 			} else {
-				app.toggleSelectedGeo(geo);
+				selection.toggleSelectedGeo(geo);
 			}
 			return true;
 		}
@@ -3666,7 +3672,7 @@ public abstract class EuclidianController {
 		clearSelection(selectedPaths, false);
 		clearSelection(selectedRegions, false);
 
-		app.clearSelectedGeos(repaint,updateSelection);
+		selection.clearSelectedGeos(repaint,updateSelection);
 
 		// if we clear selection and highlighting,
 		// we may want to clear justCreatedGeos also
@@ -4297,10 +4303,23 @@ public abstract class EuclidianController {
 		
 		GeoText text = createDynamicText(type, object, value);
 		if (text!=null){
-			text.setAbsoluteScreenLocActive(true);
-			text.setAbsoluteScreenLoc(loc.x, loc.y);
+			if (object.isRegion()){
+				kernel.setSilentMode(true);
+				AlgoPointInRegionFree algo = new AlgoPointInRegionFree(kernel.getConstruction(), (Region) object, 
+						view.toRealWorldCoordX(loc.x), view.toRealWorldCoordY(loc.y)); 
+				kernel.setSilentMode(false);
+				try {
+					text.setStartPoint(algo.getP());
+				} catch (Exception e) {
+					e.printStackTrace();
+					return null;
+				}
+			}else{
+				text.setAbsoluteScreenLocActive(true);
+				text.setAbsoluteScreenLoc(loc.x, loc.y);
+			}
 			text.setBackgroundColor(GColor.WHITE);
-			text.updateRepaint();		
+			text.updateRepaint();	
 		}
 		
 		return text;
@@ -5252,7 +5271,7 @@ public abstract class EuclidianController {
 			if (createNewPoint(hits, true, true, false)) {
 				// take movedGeoPoint which is the newly created point
 				selectedGeos.add(getMovedGeoPoint());
-				app.addSelectedGeo(getMovedGeoPoint());
+				selection.addSelectedGeo(getMovedGeoPoint());
 				objectFound = true;
 				pointCreated = false;
 			}
@@ -5340,8 +5359,8 @@ public abstract class EuclidianController {
 			if (selectionPreview) {
 				getSelectables(hits.getTopHits());
 			} else {
-				if (draggingOccured && (app.selectedGeosSize() == 1)) {
-					app.clearSelectedGeos();
+				if (draggingOccured && (selection.selectedGeosSize() == 1)) {
+					selection.clearSelectedGeos();
 				}
 	
 			}
@@ -6481,7 +6500,7 @@ public abstract class EuclidianController {
 						if (hit!=null){
 							if (hit.isGeoButton() && !(hit.isGeoTextField())) {
 								checkBoxOrButtonJustHitted = true;
-								app.removeSelectedGeo(hit, true, false); // make sure doesn't get selected
+								selection.removeSelectedGeo(hit, true, false); // make sure doesn't get selected
 								app.updateSelection(false);
 							}
 							else if (hit.isGeoBoolean()) {
@@ -6489,7 +6508,7 @@ public abstract class EuclidianController {
 								if (!isCheckboxFixed(bool)) { // otherwise changed on mouse
 									// down
 									hitCheckBox(bool);
-									app.removeSelectedGeo(bool, true, false); // make sure doesn't get selected
+									selection.removeSelectedGeo(bool, true, false); // make sure doesn't get selected
 									app.updateSelection(false);
 									bool.updateCascade();
 								}
@@ -6744,19 +6763,19 @@ public abstract class EuclidianController {
 
 	protected void handleSelectClick(ArrayList<GeoElement> geos, boolean ctrlDown) {
 		if (geos == null) {
-			app.clearSelectedGeos();
+			selection.clearSelectedGeos();
 		} else {
 			if (ctrlDown) {
 				// boolean selected = geo.is
-				app.toggleSelectedGeo(chooseGeo(geos, true));
+				selection.toggleSelectedGeo(chooseGeo(geos, true));
 				// app.geoElementSelected(geo, true); // copy definiton to input
 				// bar
 			} else {
 				if (!moveModeSelectionHandled) {
 					GeoElement geo = chooseGeo(geos, true);
 					if (geo != null) {
-						app.clearSelectedGeos(false);
-						app.addSelectedGeo(geo);
+						selection.clearSelectedGeos(false);
+						selection.addSelectedGeo(geo);
 					}
 				}
 			}
@@ -6783,7 +6802,7 @@ public abstract class EuclidianController {
 			 * // open properties dialog on double click case 2: if
 			 * (app.isApplet()) return;
 			 * 
-			 * app.clearSelectedGeos(); hits = view.getTopHits(mouseLoc); if
+			 * selection.clearSelectedGeos(); hits = view.getTopHits(mouseLoc); if
 			 * (hits != null && mode == EuclidianConstants.MODE_MOVE) {
 			 * GeoElement geo0 = (GeoElement)hits.get(0); if (!geo0.isFixed() &&
 			 * !(geo0.isGeoImage() && geo0.isIndependent()))
@@ -6843,7 +6862,7 @@ public abstract class EuclidianController {
 				return;
 			}
 	
-			app.clearSelectedGeos(true,false);
+			selection.clearSelectedGeos(true,false);
 			app.updateSelection(false);
 			// hits = view.getTopHits(mouseLoc);
 			view.setHits(mouseLoc);
@@ -7417,7 +7436,7 @@ public abstract class EuclidianController {
 			// important for electronic whiteboards
 			if (isCheckboxFixed(movedGeoBoolean)) {
 				movedGeoBoolean.setValue(!movedGeoBoolean.getBoolean());
-				app.removeSelectedGeo(movedGeoBoolean); // make sure doesn't get
+				selection.removeSelectedGeo(movedGeoBoolean); // make sure doesn't get
 														// selected
 				movedGeoBoolean.updateCascade();
 	
@@ -7851,8 +7870,8 @@ public abstract class EuclidianController {
 			geo = chooseGeo(hits, false);
 			
 			if (!selGeos.contains(geo)) {
-				app.clearSelectedGeos(false); //repaint done next step
-				app.addSelectedGeo(geo,true,true);
+				selection.clearSelectedGeos(false); //repaint done next step
+				selection.addSelectedGeo(geo,true,true);
 				// app.geoElementSelected(geo, false); // copy definiton to
 				// input bar
 			}
@@ -8043,8 +8062,8 @@ public abstract class EuclidianController {
 			}
 	
 			if (mode == EuclidianConstants.MODE_MOVE_ROTATE) {
-				app.clearSelectedGeos(false);
-				app.addSelectedGeo(rotationCenter, false, true);
+				selection.clearSelectedGeos(false);
+				selection.addSelectedGeo(rotationCenter, false, true);
 			}
 			
 
@@ -8323,7 +8342,7 @@ public abstract class EuclidianController {
 			rotationCenter = (GeoPoint) chooseGeo(
 					view.getHits().getHits(Test.GEOPOINT, tempArrayList),
 					true);
-			app.addSelectedGeo(rotationCenter);
+			selection.addSelectedGeo(rotationCenter);
 			moveMode = MOVE_NONE;
 		} else {
 			view.setHits(mouseLoc);
@@ -8332,7 +8351,7 @@ public abstract class EuclidianController {
 			// hits = view.getHits(mouseLoc);
 			// got rotation center again: deselect
 			if (!hits.isEmpty() && hits.contains(rotationCenter)) {
-				app.removeSelectedGeo(rotationCenter);
+				selection.removeSelectedGeo(rotationCenter);
 				rotationCenter = null;
 				moveMode = MOVE_NONE;
 				return;
@@ -8346,7 +8365,7 @@ public abstract class EuclidianController {
 				geo = rotGeoElement;
 			} else {
 				geo = chooseGeo(hits, true);
-				app.addSelectedGeo(geo);
+				selection.addSelectedGeo(geo);
 			}
 			rotGeoElement = geo;
 	
@@ -9066,7 +9085,7 @@ public abstract class EuclidianController {
 				if (hits.isEmpty()) {
 					// no hits
 					if (app.isUsingFullGui() && app.getGuiManager() != null) {
-						if (app.selectedGeosSize() > 0) {
+						if (selection.selectedGeosSize() > 0) {
 							// GeoElement selGeo = (GeoElement)
 							// getAppSelectedGeos().get(0);
 							app.getGuiManager().showPopupMenu(
@@ -9077,7 +9096,7 @@ public abstract class EuclidianController {
 					}
 				} else {
 					// there are hits
-					if (app.selectedGeosSize() > 0) {
+					if (selection.selectedGeosSize() > 0) {
 	
 						// right click on already selected geos -> show menu for
 						// them
@@ -9086,10 +9105,10 @@ public abstract class EuclidianController {
 						// and show menu just for new objects
 						
 						if (!hits.intersect(getAppSelectedGeos())) {
-							app.clearSelectedGeos(false); //repaint will be done next step
-							app.addSelectedGeos(hits, true);
+							selection.clearSelectedGeos(false); //repaint will be done next step
+							selection.addSelectedGeos(hits, true);
 						} else {
-							//app.addSelectedGeo(hits.get(0));
+							//selection.addSelectedGeo(hits.get(0));
 						}
 
 						if (app.isUsingFullGui() && app.getGuiManager() != null)
@@ -9532,7 +9551,7 @@ public abstract class EuclidianController {
 						&& !((geo.isNumberValue() || geo.isBooleanValue()) && geo
 								.isIndependent())) {
 					geo.setEuclidianVisible(true);
-					app.addSelectedGeo(geo);
+					selection.addSelectedGeo(geo);
 					geo.updateRepaint();
 				}
 			}
@@ -9621,7 +9640,7 @@ public abstract class EuclidianController {
 			}
 		} else {
 			if (!temporaryMode) {
-				app.clearSelectedGeos(false);
+				selection.clearSelectedGeos(false);
 			}
 			initNewMode(newMode);
 		}
@@ -9749,15 +9768,15 @@ public abstract class EuclidianController {
 	}
 	
 	protected ArrayList<GeoElement> getAppSelectedGeos(){
-		return app.getSelectedGeos();
+		return selection.getSelectedGeos();
 	}
 	
 	protected void setAppSelectedGeos(ArrayList<GeoElement> geos){
-		app.setSelectedGeos(geos);
+		selection.setSelectedGeos(geos);
 	}
 	
 	protected void setAppSelectedGeos(ArrayList<GeoElement> geos,boolean b){
-		app.setSelectedGeos(geos,b);
+		selection.setSelectedGeos(geos,b);
 	}
 	
 }

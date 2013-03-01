@@ -64,6 +64,7 @@ public class TabletHeaderPanelLeft extends HorizontalPanel
 			@Override
 			public void onClick(ClickEvent event)
 			{
+				guiModel.closeOptions(); 
 				TabletHeaderPanelLeft.this.listener.goTo(new TubeSearchPlace("TabletGui"));
 			}
 		}, ClickEvent.getType());
@@ -136,7 +137,7 @@ public class TabletHeaderPanelLeft extends HorizontalPanel
 							e.printStackTrace();
 						}
 
-						if (fileName != getFileName())
+						if (!fileName.equals(getFileName()))
 						{
 							changeTitle(fileName);
 						}
@@ -177,7 +178,7 @@ public class TabletHeaderPanelLeft extends HorizontalPanel
 					{
 						TabletHeaderPanelLeft.this.saveDialog.save(TabletHeaderPanelLeft.this.app.getXML());
 
-						if (TabletHeaderPanelLeft.this.saveDialog.getText() != getFileName())
+						if (!TabletHeaderPanelLeft.this.saveDialog.getText().equals(getFileName()))
 						{
 							changeTitle(TabletHeaderPanelLeft.this.saveDialog.getText());
 						}

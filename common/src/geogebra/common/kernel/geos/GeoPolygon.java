@@ -53,7 +53,7 @@ import java.util.ArrayList;
 public class GeoPolygon extends GeoElement implements GeoNumberValue, Path,
 		GeoSurfaceFinite, Traceable, PointRotateable, MatrixTransformable,
 		Mirrorable, Translateable, Dilateable, GeoCoordSys2D,
-		GeoPoly, Transformable, SymbolicParametersBotanaAlgo, HasSegments {
+		GeoPoly, Transformable, SymbolicParametersBotanaAlgo, HasSegments, FromMeta {
 
 	/** maximal number of vertices for polygon tool */
 	public static final int POLYGON_MAX_POINTS = 100;
@@ -1036,7 +1036,7 @@ public class GeoPolygon extends GeoElement implements GeoNumberValue, Path,
 
 		// if kernel doesn't use path/region parameters, do as if point changed
 		// its coords
-		if (!getKernel().usePathAndRegionParameters(this)) {
+		if (!getKernel().usePathAndRegionParameters(PI)) {
 			pointChanged(PI);
 			return;
 		}
@@ -1156,7 +1156,7 @@ public class GeoPolygon extends GeoElement implements GeoNumberValue, Path,
 
 		// if kernel doesn't use path/region parameters, do as if point changed
 		// its coords
-		if (!getKernel().usePathAndRegionParameters(this)) {
+		if (!getKernel().usePathAndRegionParameters(P)) {
 			pointChangedForRegion(P);
 			return;
 		}
@@ -1592,7 +1592,7 @@ public class GeoPolygon extends GeoElement implements GeoNumberValue, Path,
 	}
 
 	public Coords getDirectionInD3() {
-		return new Coords(0, 0, 1, 0);
+		return Coords.VZ;
 	}
 
 
@@ -1619,7 +1619,7 @@ public class GeoPolygon extends GeoElement implements GeoNumberValue, Path,
 		int counter = 0;
 		String str;
 		String name;
-		if (isFromMeta())
+		if (hasMeta())
 			name = loc.getPlainLabel("face"); // Name.face
 		else
 			name = loc.getPlainLabel("polygon"); // Name.polygon
@@ -1659,4 +1659,36 @@ public class GeoPolygon extends GeoElement implements GeoNumberValue, Path,
 		return null;
 	}
 	
+	
+
+	private GeoElement meta = null;
+	
+	@Override
+	public boolean hasMeta() {
+		return meta!=null;
+	}
+	
+	public GeoElement getMeta(){
+		return meta;
+	}
+
+	/**
+	 * @param polyhedron polyhedron creating this polygon
+	 */
+	public void setFromMeta(GeoElement polyhedron) {
+		meta = polyhedron;
+	}
+	
+	
+	@Override
+	public double distance(final GeoPoint p) {
+		double d = Double.POSITIVE_INFINITY;
+		for (GeoSegmentND seg : getSegments()){
+			double d1 = seg.distance(p);
+			if (d1 < d){
+				d = d1;
+			}
+		}
+		return d;
+	}
 }

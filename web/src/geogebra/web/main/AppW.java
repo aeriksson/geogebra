@@ -49,7 +49,6 @@ import geogebra.web.gui.inputbar.AlgebraInputW;
 import geogebra.web.gui.layout.panels.EuclidianDockPanelW;
 import geogebra.web.gui.menubar.GeoGebraMenubarW;
 import geogebra.web.gui.menubar.LanguageCommand;
-import geogebra.web.gui.view.algebra.AlgebraViewW;
 import geogebra.web.gui.view.spreadsheet.SpreadsheetTableModelW;
 import geogebra.web.helper.JavaScriptInjector;
 import geogebra.web.helper.ScriptLoadCallback;
@@ -172,11 +171,12 @@ public class AppW extends AppWeb {
 		        + Window.Navigator.getUserAgent());
 		initCommonObjects();
 
-		euclidianViewPanel = new EuclidianDockPanelW(false);
-		this.canvas = euclidianViewPanel.getCanvas();
-		/*mySplitLayoutPanel = new MySplitLayoutPanel(false, false, false, false, false);
+		//euclidianViewPanel = new EuclidianDockPanelW(false);
+		//this.canvas = euclidianViewPanel.getCanvas();
+		mySplitLayoutPanel = new MySplitLayoutPanel(false, false, false, false, false);
+		mySplitLayoutPanel.attachApp(this);
 		this.euclidianViewPanel = mySplitLayoutPanel.getGGWGraphicsView().getEuclidianView1Wrapper();
-		this.canvas = this.euclidianViewPanel.getCanvas();*/
+		this.canvas = this.euclidianViewPanel.getCanvas();
 		canvas.setWidth("1px");
 		canvas.setHeight("1px");
 		canvas.setCoordinateSpaceHeight(1);
@@ -232,6 +232,8 @@ public class AppW extends AppWeb {
 		initCoreObjects(undoActive, this);
 
 		// initing = true;
+		
+		removeDefaultContextMenu();
 	}
 
 	public AppW(ArticleElement article, GeoGebraAppFrame geoGebraAppFrame) {
@@ -368,6 +370,22 @@ public class AppW extends AppWeb {
 		return frame;
 	}
 
+	public static native void removeDefaultContextMenu() /*-{
+		//var canvaselement = $doc.querySelectorAll("canvas");
+		
+		if ($doc.addEventListener) {
+			$doc.addEventListener('contextmenu', function(e) {
+				e.preventDefault();
+			}, false);
+		} else {
+			$doc.attachEvent('oncontextmenu', function() {
+				window.event.returnValue = false;
+			});
+		}
+	}-*/;
+
+	
+	
 	/**
 	 * Opens the image file
 	 * 
@@ -1320,7 +1338,7 @@ public class AppW extends AppWeb {
 	protected EuclidianView newEuclidianView(boolean[] showAxes,
 	        boolean showGrid) {
 		return euclidianView = new EuclidianViewW(euclidianViewPanel,
-		        euclidianController, showAxes, showGrid, getSettings()
+		        euclidianController, showAxes, showGrid, 1, getSettings()
 		                .getEuclidian(1));
 	}
 
@@ -1551,13 +1569,13 @@ public class AppW extends AppWeb {
 	 * @param repaint
 	 *            whether all views need repainting afterwards
 	 */
-	@Override
+	/*@Override
 	public void clearSelectedGeos(boolean repaint) {
 		// if (getUseFullGui()) ?
 		if (useFullAppGui)
 			((AlgebraViewW) getAlgebraView()).clearSelection();
 		super.clearSelectedGeos(repaint);
-	}
+	}*/
 
 	@Override
 	public GeoElementSelectionListener getCurrentSelectionListener() {
@@ -1575,8 +1593,8 @@ public class AppW extends AppWeb {
 		}
 
 		//return euclidianViewPanel;
-		frame.add(euclidianViewPanel);
-		//attachSplitLayoutPanel();
+		//frame.add(euclidianViewPanel);
+		attachSplitLayoutPanel();
 
 		if (showAlgebraInput){
 			attachAlgebraInput();
@@ -1602,8 +1620,20 @@ public class AppW extends AppWeb {
 	}
 
 	public void attachSplitLayoutPanel() {
-		mySplitLayoutPanel.attachApp(this);
 		frame.add(mySplitLayoutPanel);
+		//mySplitLayoutPanel.onResize();
+		//mySplitLayoutPanel.forceLayout();
+	}
+
+	public void syncAppletPanelSize(int width, int height) {
+		if (!isFullAppGui()) {
+			// this should follow the resizing of the EuclidianView
+
+			int widthDiff = width - euclidianViewPanel.getOffsetWidth();
+			euclidianViewPanel.setPixelSize(width, height);//provided there is no style bar
+			if (mySplitLayoutPanel != null)
+				mySplitLayoutPanel.setPixelSize(mySplitLayoutPanel.getOffsetWidth() + widthDiff, height);
+		}
 	}
 
 	public void showLoadingAnimation(boolean go) {

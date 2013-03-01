@@ -30,6 +30,7 @@ import com.googlecode.mgwt.ui.client.widget.LayoutPanel;
 public class TabletGUI extends LayoutPanel implements GeoGebraMobileGUI, AcceptsOneWidget, Presenter
 {
 	EuclidianViewPanel euclidianViewPanel;
+	LayoutPanel evAVpanel;
 	TabletHeaderPanel headerPanel;
 	TabletHeaderPanelLeft leftHeader;
 	TabletHeaderPanelRight rightHeader;
@@ -63,6 +64,7 @@ public class TabletGUI extends LayoutPanel implements GeoGebraMobileGUI, Accepts
 				// TODO update whatever is shown right now, not necessarily the
 				// euclidianViewPanel,
 				// this is just a temporary workaround
+				TabletGUI.this.euclidianViewPanel.getEuclidianView().updateSize(); 
 				TabletGUI.this.euclidianViewPanel.repaint();
 			}
 		});
@@ -111,6 +113,8 @@ public class TabletGUI extends LayoutPanel implements GeoGebraMobileGUI, Accepts
 
 		MobileController ec = new MobileController(mobileModel,kernel.getApplication());
 		ec.setKernel(kernel);
+		this.evAVpanel = new LayoutPanel();
+		this.evAVpanel.getElement().setClassName("evAVpanel");
 		this.euclidianViewPanel.initEuclidianView(ec);
 		mobileModel.getGuiModel().setEuclidianView(this.euclidianViewPanel.getEuclidianView());
 
@@ -119,14 +123,15 @@ public class TabletGUI extends LayoutPanel implements GeoGebraMobileGUI, Accepts
 
 		this.algebraViewPanel.initAlgebraView(ec, kernel);
 		this.toolBar.makeTabletToolBar(mobileModel);
-
-		this.add(this.euclidianViewPanel);
+		this.evAVpanel.add(this.euclidianViewPanel);
+		
+		this.add(this.evAVpanel);
 		this.add(this.headerPanel);
 		this.add(this.leftHeader);
 		this.add(this.rightHeader);
 		this.add(this.stylingBar);
 		
-		this.euclidianViewPanel.add(this.algebraViewPanel); 
+		this.evAVpanel.add(this.algebraViewPanel); 
 		
 		this.add(this.toolBar);
 	}
