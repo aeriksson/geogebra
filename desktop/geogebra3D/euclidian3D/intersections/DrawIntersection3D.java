@@ -3,7 +3,7 @@ package geogebra3D.euclidian3D.intersections;
 import geogebra3D.euclidian3D.Drawable3DCurves;
 import geogebra3D.euclidian3D.EuclidianView3D;
 import geogebra3D.euclidian3D.opengl.Renderer;
-import geogebra3D.euclidian3D.plots.CurveTriangleList;
+import geogebra3D.euclidian3D.plots.curves.CurveTriangleList;
 import geogebra3D.euclidian3D.plots.surfaces.parametric.SurfaceTriangleList;
 
 import java.nio.FloatBuffer;
@@ -37,8 +37,8 @@ public class DrawIntersection3D extends Drawable3DCurves{
 		FloatBuffer ver1 = object1.getTriangleBuffer();
 		FloatBuffer ver2 = object2.getTriangleBuffer();
 		
-		int cnt1 = object1.getChunkAmt();
-		int cnt2 = object2.getChunkAmt();
+		int cnt1 = object1.getChunkCount();
+		int cnt2 = object2.getChunkCount();
 		
 		float[] t1 = new float[9]; float[] t2 = new float[9];
 		ver1.rewind(); ver2.rewind();

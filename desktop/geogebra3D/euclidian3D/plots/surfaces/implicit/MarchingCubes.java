@@ -357,6 +357,11 @@ class MCTriangle extends DynamicMeshElement {
 				return true;
 		return false;
 	}
+
+	@Override
+	public void init() {
+		// TODO Auto-generated method stub
+	}
 }
 
 /**
@@ -3443,7 +3448,7 @@ class MCROAM {
 	 * @return
 	 */
 	private boolean tooCoarse() {
-		return (triList.getTriAmt() < 3000);
+		return (triList.getTriangleCount() < 3000);
 	}
 }
 
@@ -4027,7 +4032,7 @@ public class MarchingCubes {
 	 * @return the amount of visible segments
 	 */
 	public int getVisibleChunks() {
-		return drawList.getChunkAmt();
+		return drawList.getChunkCount();
 	}
 
 	/**

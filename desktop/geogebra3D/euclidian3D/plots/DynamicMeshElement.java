@@ -62,8 +62,10 @@ public abstract class DynamicMeshElement {
 		children = new DynamicMeshElement[mesh.nChildren];
 		parents = new DynamicMeshElement[mesh.nParents];
 	}
+	
+	public abstract void init();
 
-	/**merg
+	/**
 	 * @return the level of the element
 	 */
 	public int getLevel() {
@@ -136,7 +138,7 @@ public abstract class DynamicMeshElement {
 	public void updateCullInfo() {
 		
 		if(this.lastVersion!=mesh.currentVersion){
-			mesh.drawList.reinsert(this, mesh.currentVersion);
+			mesh.triangleList.reinsert(this, mesh.currentVersion);
 		}
 		
 		if (ignoreCull() || ignoreFlag)
@@ -254,5 +256,14 @@ public abstract class DynamicMeshElement {
 	 * @return true if and only if the element was recalculated
 	 */
 	public abstract boolean recalculate(int currentVersion, boolean recurse);
+
+	/**
+	 * @param i
+	 *            index of a child
+	 * @return false if child number i is null, otherwise true
+	 */
+	public boolean childCreated(int i) {
+		return children[i] != null;
+	}
 
 }

@@ -35,7 +35,7 @@ public class DrawCurve3D extends Drawable3DCurves {
 		super(a_view3d, curve);
 		this.curve = curve;
 		updateDomain();
-		mesh = new CurveMesh(curve, cullingBox, (float) a_view3d.getScale());
+		mesh = new CurveMesh(curve, cullingBox, domain, (float) a_view3d.getScale());
 		updateCullingBox();
 	}
 
@@ -86,7 +86,7 @@ public class DrawCurve3D extends Drawable3DCurves {
 		if (elementHasChanged) {
 			if (updateDomain()) {
 				//domain has changed - create a new mesh
-				mesh = new CurveMesh(curve, cullingBox, (float) getView3D().getScale());
+				mesh = new CurveMesh(curve, cullingBox, domain, (float) getView3D().getScale());
 			} else {
 				//otherwise, update the old mesh
 				elementHasChanged = false;
@@ -115,23 +115,14 @@ public class DrawCurve3D extends Drawable3DCurves {
 		EuclidianView3D view = getView3D();
 		mesh.setScale((float) view.getScale());
 	}
-
-	/** 
-	 * Get the curve width factor, i.e. a constant proportional to the
-	 * curve thickness.
-	 * * @return The current curve width factor of the mesh.
-	 **/
-	public float getCurveWidthFactor() {
-		return mesh.getCurveWidthFactor();
-	}
 	
 	/**
 	 * Set the curve width factor, i.e. a constant proportional to the
 	 * curve thickness.
 	 * @param value The desired curve width factor value for the mesh.
 	 */
-	public void setCurveWidthFactor(float value) {
-		mesh.setCurveWidthFactor(value);
+	public void setScaleFactor(float value) {
+		mesh.setScaleFactor(value);
 	}
 
 	@Override

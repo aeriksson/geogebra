@@ -1,18 +1,27 @@
-package geogebra3D.euclidian3D.plots;
+package geogebra3D.euclidian3D.plots.curves;
 
 import geogebra.common.kernel.Matrix.Coords;
-import geogebra3D.euclidian3D.plots.curves.CurveMesh;
+import geogebra3D.euclidian3D.plots.TriangleList;
+import geogebra3D.euclidian3D.plots.TriangleListElement;
 
 /**
  * A triangle list for handling collections of segments.
  */
 public class CurveTriangleList extends TriangleList {
 
+	/** the amount of vertices per point */
+	static public final int VERTICES_PER_POINT = 4;
+
+	/** the number of vertices per segment */
+	static public final int VERTICES_PER_SEGMENT = 2 * (VERTICES_PER_POINT + 1);
+
+	static public final float DEFAULT_SCALE_FACTOR = 1.0f;
+
 	/** the most recently set scale */
 	private float currScale;
-
-	/** number of vertices to place around each end of a segment */
-	private static final short VERTICES_PER_POINT = 4;
+	
+	
+	public float scaleFactor = DEFAULT_SCALE_FACTOR;
 
 	/** values precomputed to speed up calculations */
 	private static final float[] cosines = new float[VERTICES_PER_POINT];
@@ -56,7 +65,7 @@ public class CurveTriangleList extends TriangleList {
 	 */
 	public TriangleListElement add(float[] v0, float[] v1, boolean visible) {
 
-		CurveTriListElem elem = new CurveTriListElem(v0, v1, VERTICES_PER_POINT, cosines,
+		CurveTrangleListElement elem = new CurveTrangleListElement(v0, v1, cosines,
 				sines);
 
 		float[] vertices = calcVertices(elem);
@@ -84,8 +93,7 @@ public class CurveTriangleList extends TriangleList {
 	 */
 	public TriangleListElement add(float[] v0, float[] v1, float[] t0, float[] t1, boolean visible) {
 
-		CurveTriListElem elem = new CurveTriListElem(v0, v1, t0, t1, VERTICES_PER_POINT, cosines,
-				sines);
+		CurveTrangleListElement elem = new CurveTrangleListElement(v0, v1, t0, t1, cosines, sines);
 
 		float[] vertices = calcVertices(elem);
 		float[] normals = calcNormals(elem);
@@ -135,7 +143,7 @@ public class CurveTriangleList extends TriangleList {
 	 * @param e
 	 * @return a set of 2*(nVerts+1) vertices corresponding to a triangle strip
 	 */
-	private float[] calcVertices(CurveTriListElem e) {
+	private float[] calcVertices(CurveTrangleListElement e) {
 		float[] v = new float[2 * (VERTICES_PER_POINT + 1) * 3];
 
 		float[] v0 = e.v0;
@@ -175,7 +183,7 @@ public class CurveTriangleList extends TriangleList {
 	 * @param e
 	 * @return
 	 */
-	private float[] calcNormals(CurveTriListElem e) {
+	private float[] calcNormals(CurveTrangleListElement e) {
 		float[] normals = new float[2 * (VERTICES_PER_POINT + 1) * 3];
 
 		for (int i = 0; i <= VERTICES_PER_POINT; i++) {
@@ -199,7 +207,7 @@ public class CurveTriangleList extends TriangleList {
 	 * @param newScale
 	 */
 	public void rescale(float newScale) {
-		CurveTriListElem t = (CurveTriListElem) front;
+		CurveTrangleListElement t = (CurveTrangleListElement) front;
 		while (t != null) {
 
 			float[] v = getVertices(t);
@@ -223,16 +231,20 @@ public class CurveTriangleList extends TriangleList {
 
 			setVertices(t, v);
 			t.scale = newScale;
-			t = (CurveTriListElem) t.getNext();
+			t = (CurveTrangleListElement) t.getNext();
 		}
 		currScale = newScale;
+	}
+	
+	public void setScaleFactor(float value) {
+		scaleFactor = value;
 	}
 }
 
 /**
  * A class corresponding to an element in a CurveTriList
  */
-class CurveTriListElem extends TriangleListElement {
+class CurveTrangleListElement extends TriangleListElement {
 
 	/** The vertices and curve normals at the segment endpoints */
 	float[] v0, v1, t0, t1;
@@ -248,19 +260,16 @@ class CurveTriListElem extends TriangleListElement {
 	 *            the first endpoint
 	 * @param v1
 	 *            the second endpoint
-	 * @param nVertices
-	 *            number of surface vertices corresponding to each endpoint
 	 * @param cosines
 	 *            an array of precomputed cosines
 	 * @param sines
 	 *            an array of precomputed sines
 	 */
-	public CurveTriListElem(float[] v0, float[] v1, short nVertices,
-			float[] cosines, float[] sines) {
+	public CurveTrangleListElement(float[] v0, float[] v1, float[] cosines, float[] sines) {
 		this(v0, v1,
 				new float[] { v1[0] - v0[0], v1[1] - v0[1], v1[2] - v0[2] },
 				new float[] { v1[0] - v0[0], v1[1] - v0[1], v1[2] - v0[2] },
-				nVertices, cosines, sines);
+				cosines, sines);
 	}
 
 	/**
@@ -272,18 +281,15 @@ class CurveTriListElem extends TriangleListElement {
 	 *            the normal at the first endpoint
 	 * @param t1
 	 *            the tangent at the second endpoint
-	 * @param nVertices
-	 *            number of surface vertices corresponding to each endpoint
 	 * @param cosines
 	 *            an array of precomputed cosines
 	 * @param sines
 	 *            an array of precomputed sines
 	 */
-	public CurveTriListElem(float[] v0, float[] v1, float[] t0, float[] t1,
-			short nVertices, float[] cosines, float[] sines) {
+	public CurveTrangleListElement(float[] v0, float[] v1, float[] t0, float[] t1, float[] cosines, float[] sines) {
 		super(false);
-		pts = new float[2][nVertices][3];
-		nrms = new float[2][nVertices][3];
+		pts = new float[2][CurveTriangleList.VERTICES_PER_POINT][3];
+		nrms = new float[2][CurveTriangleList.VERTICES_PER_POINT][3];
 
 		this.v0 = v0;
 		this.v1 = v1;
@@ -316,7 +322,7 @@ class CurveTriListElem extends TriangleListElement {
 		Coords[] v = t.completeOrthonormal();
 
 		// create midpoints
-		for (int j = 0; j < CurveMesh.VERTICES_PER_POINT; j++) {
+		for (int j = 0; j < CurveTriangleList.VERTICES_PER_POINT; j++) {
 			Coords point = c.add(v[0].mul(cosines[j])).add(v[1].mul(sines[j]));
 			Coords normal = point.sub(c).normalized();
 

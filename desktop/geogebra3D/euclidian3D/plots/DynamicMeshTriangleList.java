@@ -75,10 +75,10 @@ public interface DynamicMeshTriangleList {
 	/**
 	 * @return number of triangles in the list
 	 */
-	public abstract int getTriAmt();
+	public abstract int getTriangleCount();
 
 	/**
 	 * @return number of chunks in the list
 	 */
-	public abstract int getChunkAmt();
+	public abstract int getChunkCount();
 }

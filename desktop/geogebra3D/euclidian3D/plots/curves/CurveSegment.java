@@ -1,8 +1,7 @@
 package geogebra3D.euclidian3D.plots.curves;
 
-import java.util.HashMap;
-
 import geogebra.common.kernel.Matrix.Coords;
+import geogebra3D.euclidian3D.plots.DynamicMesh;
 import geogebra3D.euclidian3D.plots.DynamicMeshElement;
 import geogebra3D.euclidian3D.plots.TriangleListElement;
 import geogebra3D.kernel3D.GeoCurveCartesian3D;
@@ -11,6 +10,14 @@ import geogebra3D.kernel3D.GeoCurveCartesian3D;
  * An element in a CurveMesh.
  */
 class CurveSegment extends DynamicMeshElement {
+	/**
+	 * scaling constant used for setting the error of segments where one or more
+	 * vertices are undefined
+	 */
+	static private final double UNDEFINED_ELEMENT_ERROR_DENSITY = 100;	
+
+	/** the parameter difference used to approximate tangents */
+	static private final double TANGENT_APPROXIMATION_DELTA = 1e-10;
 
 	/** error value associated with the segment */
 	double error;
@@ -49,30 +56,29 @@ class CurveSegment extends DynamicMeshElement {
 	 *            a reference to the mesh
 	 * @param level
 	 *            the level in the tree
-	 * @param pa1
-	 *            parameter value at first endpoint
-	 * @param pa2
-	 *            parameter value at second endpoint
+	 * @param parameterValue
+	 * 			  parameter value
 	 * @param version
 	 *            the current version of the object
 	 */
-	CurveSegment(CurveMesh mesh, int level, double pa,
+	CurveSegment(DynamicMesh mesh, int level, double parameterValue,
 			int version) {
 		super(mesh, level, true, version);
-		param = pa;
+		param = parameterValue;
 		setSplit(true);
-		vertex = calcVertex(pa);
-		deriv = approxDeriv(pa, vertex);
+		vertex = calcVertex(parameterValue);
+		deriv = approxDeriv(parameterValue, vertex);
 	}
 
-	CurveSegment(CurveMesh mesh, int level, CurveSegment p0, CurveSegment p1, int version) {
+	CurveSegment(DynamicMesh mesh, int level, CurveSegment p0, CurveSegment p1, int version) {
 		super(mesh, level, false, version);
 		parents[0] = p0;
 		parents[1] = p1;
 		init();
 	}
 
-	private void init() {
+	@Override
+	public void init() {
 		double pa0 = ((CurveSegment)parents[0]).getParam(0);
 		double pa1 = ((CurveSegment)parents[1]).getParam(1);
 		length = Math.abs(pa0 - pa1);
@@ -146,12 +152,12 @@ class CurveSegment extends DynamicMeshElement {
 				if (!f.isFinite() || !f.isDefined()) {
 					f = calcVertex(u - d);
 					param = u-d;
-					der = f.sub(calcVertex(u - d - CurveMesh.TANGENT_APPROXIMATION_DELTA)).mul(1/CurveMesh.TANGENT_APPROXIMATION_DELTA);
+					der = f.sub(calcVertex(u - d - TANGENT_APPROXIMATION_DELTA)).mul(1 / TANGENT_APPROXIMATION_DELTA);
 				} else {
-					der = calcVertex(u + d + CurveMesh.TANGENT_APPROXIMATION_DELTA).sub(f).mul(1/CurveMesh.TANGENT_APPROXIMATION_DELTA);
+					der = calcVertex(u + d + TANGENT_APPROXIMATION_DELTA).sub(f).mul(1 / TANGENT_APPROXIMATION_DELTA);
 				}
 			} else {
-				der = calcVertex(u + CurveMesh.TANGENT_APPROXIMATION_DELTA).sub(f).mul(1/CurveMesh.TANGENT_APPROXIMATION_DELTA);
+				der = calcVertex(u + TANGENT_APPROXIMATION_DELTA).sub(f).mul(1 / TANGENT_APPROXIMATION_DELTA);
 			}
 			
 			//perform discontinuity check
@@ -210,7 +216,7 @@ class CurveSegment extends DynamicMeshElement {
 					tll = f.sub(lo);
 					trr = hi.sub(f);
 					
-					der = calcVertex(ui + CurveMesh.TANGENT_APPROXIMATION_DELTA).sub(f).mul(1/CurveMesh.TANGENT_APPROXIMATION_DELTA);
+					der = calcVertex(ui + TANGENT_APPROXIMATION_DELTA).sub(f).mul(1 / TANGENT_APPROXIMATION_DELTA);
 					
 					expl = der.add(loder).mul(0.5*(ui-lop)); // projected difference left
 					expr = der.add(hider).mul(0.5*(hip-ui)); // projected difference right
@@ -268,10 +274,7 @@ class CurveSegment extends DynamicMeshElement {
 
 	private Coords calcVertex(double u) {
 		final CurveMesh m = (CurveMesh) mesh;
-		final GeoCurveCartesian3D curve = m.curve;
-		HashMap<Double, Coords> vertexPositions = m.getSegmentVertexPositions();
-		if(vertexPositions.containsKey(u))
-			return vertexPositions.get(u);
+		final GeoCurveCartesian3D curve = m.getFunction();
 
 		Coords f = curve.evaluateCurve(u);
 
@@ -283,7 +286,6 @@ class CurveSegment extends DynamicMeshElement {
 				f = curve.evaluateCurve(u - d);
 			}
 		}
-		vertexPositions.put(u, f);
 		return f;
 	}
 	
@@ -429,7 +431,7 @@ class CurveSegment extends DynamicMeshElement {
 		// alternative error measure for singular segments
 		if (isSingular) {
 			if(p0v.isDefined() || vertex.isDefined() || p1v.isDefined())
-				error = CurveMesh.UNDEFINED_SEGMENT_ERROR_DENSITY * length;
+				error = UNDEFINED_ELEMENT_ERROR_DENSITY * length;
 			else
 				error = 0;
 		}
@@ -447,13 +449,13 @@ class CurveSegment extends DynamicMeshElement {
 	private Coords approxDeriv(double param, Coords v) {
 		
 		//forwards difference quotient 
-		Coords d = calcVertex(param + CurveMesh.TANGENT_APPROXIMATION_DELTA);
-		d = d.sub(v).mul(1 / CurveMesh.TANGENT_APPROXIMATION_DELTA);
+		Coords d = calcVertex(param + TANGENT_APPROXIMATION_DELTA);
+		d = d.sub(v).mul(1 / TANGENT_APPROXIMATION_DELTA);
 		
 		if(!d.isDefined()) {
 			//backwards difference quotient
-			d = calcVertex(param - CurveMesh.TANGENT_APPROXIMATION_DELTA);
-			d = v.sub(d).mul(1 / CurveMesh.TANGENT_APPROXIMATION_DELTA);
+			d = calcVertex(param - TANGENT_APPROXIMATION_DELTA);
+			d = v.sub(d).mul(1 / TANGENT_APPROXIMATION_DELTA);
 		}
 		
 		return d;
@@ -462,9 +464,9 @@ class CurveSegment extends DynamicMeshElement {
 	@Override
 	protected void setHidden(boolean val) {
 		if (val)
-			mesh.drawList.hide(this);
+			mesh.triangleList.hide(this);
 		else
-			mesh.drawList.show(this);
+			mesh.triangleList.show(this);
 	}
 
 	@Override
@@ -489,8 +491,8 @@ class CurveSegment extends DynamicMeshElement {
 	@Override
 	protected void createChild(int i) {
 		// generate both children at once
-		children[0] = new CurveSegment((CurveMesh) mesh, level + 1, (CurveSegment)parents[0], this, lastVersion);
-		children[1] = new CurveSegment((CurveMesh) mesh, level + 1, this, (CurveSegment)parents[1], lastVersion);
+		children[0] = new CurveSegment((DynamicMesh) mesh, level + 1, (CurveSegment)parents[0], this, lastVersion);
+		children[1] = new CurveSegment((DynamicMesh) mesh, level + 1, this, (CurveSegment)parents[1], lastVersion);
 	}
 
 	@Override

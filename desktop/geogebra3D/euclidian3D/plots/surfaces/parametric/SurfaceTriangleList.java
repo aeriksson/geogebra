@@ -293,8 +293,8 @@ public class SurfaceTriangleList extends TriangleList implements DynamicMeshTria
 	 * @param index Index of the triangle.
 	 * @return True if the triangle is clipped; otherwise false.
 	 */
-	private static boolean triangleIsClipped(SurfaceDiamond diamond, int index) {
-		return diamond.ignoreFlag || ((SurfaceDiamond) diamond.parents[index]).ignoreFlag;
+	private static boolean triangleIsClipped(DynamicMeshElement diamond, int index) {
+		return diamond.ignoreFlag || ((DynamicMeshElement) diamond.parents[index]).ignoreFlag;
 	}
 
 	/**

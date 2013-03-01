@@ -11,7 +11,7 @@ class SurfaceSplitBucketAssigner implements
 		BucketAssigner<DynamicMeshElement> {
 
 	public int getBucketIndex(Object o, int bucketAmt) {
-		SurfaceDiamond d = (SurfaceDiamond) o;
+		DynamicMeshElement d = (DynamicMeshElement) o;
 		int bucket;
 		double e = d.getError();
 		int f = (int) (Math.exp(e + 1) * 200) + 3;

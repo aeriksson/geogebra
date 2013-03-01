@@ -1,7 +1,10 @@
 package geogebra3D.euclidian3D.plots;
 
 import java.nio.FloatBuffer;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * An abstract class representing a mesh that can be dynamically refined.
@@ -10,34 +13,47 @@ import java.util.Date;
  * split operations.
  */
 public abstract class DynamicMesh {
+	
+	private static final boolean DISPLAY_DEBUG_INFO = false;
 
 	/** the queue used for merge operations */
 	public FastBucketPriorityQueue mergeQueue;
 	/** the queue used for split operations */
 	public FastBucketPriorityQueue splitQueue;
 
-	/** controls if debug info is displayed or not */
-	protected static final boolean debugInfo = false;
-
 	/** box to cull elements against */
 	protected double[] cullingBox;
 
 	/** the triangle list used by the mesh */
-	public DynamicMeshTriangleList drawList;
-
-	/** the maximum amount of operations to perform in one update */
-	private int stepRefinement = 100;
-
-	/** The number of children of each node */
-	final int nChildren;
-	
-	/** The number of parents of each node */
-	final int nParents;
+	public DynamicMeshTriangleList triangleList;
 
 	/** current version of the mesh - increments when the function is changed */
 	protected int currentVersion = 0;
 	
+	/** Indicates if split/merge operations should be performed or not */
 	protected boolean noUpdate = false;
+	
+	/** Current level of detail setting */
+	public double levelOfDetail;
+	
+	final int nChildren;
+	
+	final int nParents;
+	
+	protected DynamicMeshElement root;
+	
+	private static final Map<String, Object> DEFAULT_CONFIG;
+	static {
+        Map<String, Object> config = new HashMap<String, Object>();
+        config.put("maximum refinement depth", 20);
+        config.put("initial splits", 2);
+        config.put("parents per element", 2);
+        config.put("children per element", 2);
+        
+        DEFAULT_CONFIG = Collections.unmodifiableMap(config);
+	}
+	
+	private final Map<String, Object> CONFIG; 
 
 	/** used in optimizeSub() */
 	public enum Side {
@@ -56,21 +72,51 @@ public abstract class DynamicMesh {
 	 *            the PQ used for split operations
 	 * @param drawList
 	 *            the list used for drawing
-	 * @param nParents
-	 *            number of parents of each node
-	 * @param nChildren
-	 *            number of children of each node
-	 * @param maxLevel
-	 *            maximum refinement depth
+	 * @param config
+	 * 			  map containint configuration values
 	 */
 	protected DynamicMesh(FastBucketPriorityQueue mergeQueue, FastBucketPriorityQueue splitQueue,
-			DynamicMeshTriangleList drawList, int nParents, int nChildren,
-			int maxLevel) {
+			DynamicMeshTriangleList drawList, double[] domain, double[] cullingBox,
+			Map<String, Object> config) {
 		this.mergeQueue = mergeQueue;
 		this.splitQueue = splitQueue;
-		this.drawList = drawList;
-		this.nParents = nParents;
-		this.nChildren = nChildren;
+		this.triangleList = drawList;
+		CONFIG = new HashMap<String, Object>();
+		CONFIG.putAll(DEFAULT_CONFIG);
+		CONFIG.putAll(config);
+		
+		nParents = (Integer) CONFIG.get("parents per element");
+		nChildren = (Integer) CONFIG.get("children per element");
+
+		setCullingBox(cullingBox);
+		init(domain);
+	}
+	
+
+	/**
+	 * Bootstraps the base of the mesh.
+	 * 
+	 * @param domain The function domain on the format [uMin, uMax]
+	 */
+	protected void init(double[] domain) {
+		initRoot(domain);
+
+		root.updateCullInfo();
+
+		splitQueue.add(root);
+		triangleList.add(root);
+
+		performSplits((Integer) CONFIG.get("initial split count"));
+	}
+	
+	abstract protected void initRoot(double[] domain);
+
+	private void performSplits(int numberOfSplits) {
+		// split the first few elements in order to avoid problems
+		// with periodic funtions
+		for (int i = 0; i < numberOfSplits; i++) {
+			split(splitQueue.forcePoll());
+		}
 	}
 
 	/**
@@ -79,41 +125,7 @@ public abstract class DynamicMesh {
 	 * @return false if no more updates are needed
 	 */
 	public boolean optimize() {
-		 return optimizeSub(stepRefinement);
-	}
-
-	/**
-	 * @param cullingBox
-	 *            new culling box
-	 */
-	public void setCullingBox(double[] cullingBox) {
-		this.cullingBox = cullingBox;
-		noUpdate = false;
-	}
-
-	/**
-	 * @return Returns a FloatBuffer containing the current mesh as a triangle
-	 *         list. Each triangle is represented as 9 consecutive floats. The
-	 *         FloatBuffer will probably contain extra floats - use
-	 *         getTriangleCount() to find out how many floats are valid.
-	 */
-	public FloatBuffer getVertices() {
-		return drawList.getTriangleBuffer();
-	}
-
-	/**
-	 * @return Returns a FloatBuffer containing the current mesh as a triangle
-	 *         list.
-	 */
-	public FloatBuffer getNormals() {
-		return drawList.getNormalBuffer();
-	}
-
-	/**
-	 * @return the amount of triangles in the current mesh.
-	 */
-	public int getTriangleCount() {
-		return drawList.getTriAmt();
+		 return optimizeSub((Integer) CONFIG.get("maximum refinement depth"));
 	}
 
 	/**
@@ -124,19 +136,19 @@ public abstract class DynamicMesh {
 	 */
 	private boolean optimizeSub(int maxCount) {
 		int count = 0;
-
+		
 		long t1 = new Date().getTime();
-
+		
 		updateCullingInfo();
 		
 		if(noUpdate)
 			return false;
-
+		
 		Side side = needsRefinement();
 		Side prevSide = null;
 		
 		boolean switched = false;
-
+		
 		do {
 			if (side == Side.MERGE)
 				merge(mergeQueue.poll());
@@ -155,12 +167,38 @@ public abstract class DynamicMesh {
 			side = needsRefinement();
 			count++;
 		} while (side != Side.NONE && count < maxCount);
-
-		if (debugInfo)
+		
+		if (DISPLAY_DEBUG_INFO)
 			System.out.println(getDebugInfo(new Date().getTime() - t1));
-
+		
 		return false;
 	}
+
+	/**
+	 * @return Returns a FloatBuffer containing the current mesh as a triangle
+	 *         list. Each triangle is represented as 9 consecutive floats. The
+	 *         FloatBuffer will probably contain extra floats - use
+	 *         getTriangleCount() to find out how many floats are valid.
+	 */
+	public FloatBuffer getVertices() {
+		return triangleList.getTriangleBuffer();
+	}
+
+	/**
+	 * @return Returns a FloatBuffer containing the current mesh as a triangle
+	 *         list.
+	 */
+	public FloatBuffer getNormals() {
+		return triangleList.getNormalBuffer();
+	}
+
+	/**
+	 * @return the amount of triangles in the current mesh.
+	 */
+	public int getTriangleCount() {
+		return triangleList.getTriangleCount();
+	}
+
 
 	/**
 	 * updates the culling info of each element
@@ -172,12 +210,13 @@ public abstract class DynamicMesh {
 	 *            the time of the last update
 	 * @return a string with the desired debug info
 	 */
-	protected abstract String getDebugInfo(long time);
-
-	/**
-	 * @return true if the mesh should be refined, otherwise false
-	 */
-	protected abstract Side needsRefinement();
+	protected String getDebugInfo(long time) {
+		return getFunction() + ":\tupdate time: " + time + "ms\ttriangles: "
+				+ triangleList.getTriangleCount() + "\t max error: "
+				+ splitQueue.peek().getError();
+	}
+	
+	protected abstract Object getFunction();
 
 	/**
 	 * Perform a merge operation on the target element.
@@ -213,7 +252,7 @@ public abstract class DynamicMesh {
 			}
 
 			// remove children from draw list
-			drawList.remove(c, (c.parents[0] == t ? 0 : 1));
+			triangleList.remove(c, (c.parents[0] == t ? 0 : 1));
 		}
 
 		// handle parents
@@ -226,7 +265,7 @@ public abstract class DynamicMesh {
 		}
 
 		// add to draw list
-		drawList.add(t);
+		triangleList.add(t);
 		return;
 	}
 
@@ -247,9 +286,6 @@ public abstract class DynamicMesh {
 		// switch queues
 		splitQueue.remove(t);
 		mergeQueue.add(t);
-
-//		if(((CurveSegment)t).vertices[0].getX()==7.03125)
-//			System.err.print("");
 		
 		// mark as split
 		t.setSplit(true);
@@ -277,14 +313,14 @@ public abstract class DynamicMesh {
 
 				// add child to drawing list
 				if (!c.isSplit()) {
-					drawList.add(c, (c.parents[0] == t ? 0 : 1));
+					triangleList.add(c, (c.parents[0] == t ? 0 : 1));
 					splitQueue.add(c);
 				}
 			}
 		}
 
 		// remove from drawing list
-		drawList.remove(t);
+		triangleList.remove(t);
 	}
 
 	/**
@@ -296,14 +332,73 @@ public abstract class DynamicMesh {
 		noUpdate = false;
 
 		// update all elements currently in draw list
-		drawList.update(currentVersion);
+		triangleList.update(currentVersion);
 
 		updateCullingInfo();
 		
 		// update elements in queues
-		splitQueue.recalculate(currentVersion, drawList);
-		mergeQueue.recalculate(currentVersion, drawList);
+		splitQueue.recalculate(currentVersion, triangleList);
+		mergeQueue.recalculate(currentVersion, triangleList);
 		
 		updateCullingInfo();
+	}
+
+	public void setCullingBox(double[] cullingBox) {
+		this.cullingBox = cullingBox;
+		noUpdate = false;
+	}
+
+	protected double getMaximumCullingBoxWidth(double[] boundingBox) {
+		double maxWidth, wx, wy, wz;
+		wx = boundingBox[1] - boundingBox[0];
+		wy = boundingBox[5] - boundingBox[4];
+		wz = boundingBox[3] - boundingBox[2];
+		maxWidth = wx > wy ? (wx > wz ? wx : wz) : (wy > wz ? wy : wz);
+		return maxWidth;
+	}
+
+	/**
+	 * Sets the desired level of detail
+	 * 
+	 * @param value
+	 *            any value greater than or equal to zero, typically less than
+	 *            one
+	 */
+	public void setLevelOfDetail(double value) {
+		if (value < 0)
+			throw new RuntimeException();
+		levelOfDetail = value;
+	}
+
+	/**
+	 * 
+	 * @return current level of detail - typically in [0,1]
+	 */
+	public double getLevelOfDetail() {
+		return levelOfDetail;
+	}
+
+	protected abstract double getMaximumAllowedError(double scaleFactor);
+
+	protected Side needsRefinement() {
+		double maxWidth = getMaximumCullingBoxWidth(cullingBox);
+		double desiredMaxError = getMaximumAllowedError(maxWidth);
+		
+		DynamicMeshElement nextInSplitQueue = splitQueue.peek();
+		DynamicMeshElement nextInMergeQueue = mergeQueue.peek();
+		
+		if (nextInSplitQueue.getError() > desiredMaxError) {
+			return Side.SPLIT;
+		} else if (nextInMergeQueue != null && nextInMergeQueue.getError() < desiredMaxError) {
+			return Side.MERGE;
+		}
+		return Side.NONE;
+	}
+
+	/**
+	 * @return the amount of visible segments
+	 */
+	public int getVisibleChunkCount() {
+		return triangleList.getChunkCount();
 	}
 }

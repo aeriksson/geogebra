@@ -1,7 +1,6 @@
 package geogebra3D.euclidian3D.plots.curves;
 
 import geogebra3D.euclidian3D.plots.CullInfo;
-import geogebra3D.euclidian3D.plots.CurveTriangleList;
 import geogebra3D.euclidian3D.plots.DynamicMeshElement;
 import geogebra3D.euclidian3D.plots.DynamicMeshTriangleList;
 import geogebra3D.euclidian3D.plots.TriangleListElement;

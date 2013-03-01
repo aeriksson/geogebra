@@ -31,7 +31,7 @@ public abstract class Octree {
 	 *            the triangle to insert
 	 * @throws Exception
 	 */
-	public abstract void insertTriangle(float[] tri) throws Exception;
+	public abstract void insertTriangle(float[] tri);
 
 	/**
 	 * Attempt to insert a segment into the octree

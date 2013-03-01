@@ -11,7 +11,7 @@ class SurfaceMergeBucketAssigner implements
 		BucketAssigner<DynamicMeshElement> {
 
 	public int getBucketIndex(Object o, int bucketAmt) {
-		SurfaceDiamond d = (SurfaceDiamond) o;
+		DynamicMeshElement d = (DynamicMeshElement) o;
 		double e = d.getError();
 		int f = (int) (Math.exp(1 - e) * 200);
 		int ret = f > bucketAmt - 1 ? bucketAmt - 1 : f;

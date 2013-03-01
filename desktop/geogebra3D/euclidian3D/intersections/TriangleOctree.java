@@ -33,7 +33,7 @@ public class TriangleOctree extends Octree {
 	 *            the triangle as a set of nine floats
 	 */
 	@Override
-	public void insertTriangle(float[] tri) throws Exception {
+	public void insertTriangle(float[] tri) {
 		float[] bb = Collision.triangleBoundingBox(tri);
 
 		root.insert(bb, tri, 1);

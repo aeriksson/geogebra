@@ -86,14 +86,14 @@ public class TriangleList implements Iterable<TriangleListElement>{
 	 * @return the current amount of triangles. this number will be incorrect if
 	 *         triangle strips are used
 	 */
-	public int getTriAmt() {
+	public int getTriangleCount() {
 		return chunkCount * (chunkSize / 9);
 	}
 
 	/**
 	 * @return the current amount of chunks
 	 */
-	public int getChunkAmt() {
+	public int getChunkCount() {
 		return chunkCount;
 	}
 

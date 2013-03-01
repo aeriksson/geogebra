@@ -4,7 +4,8 @@ import geogebra.common.kernel.Kernel;
 import geogebra.common.kernel.Matrix.Coords;
 import geogebra.common.kernel.geos.GeoCurveCartesian3DInterface;
 import geogebra.common.kernel.geos.GeoElement;
-import geogebra3D.euclidian3D.plots.curves.CurveMesh;
+import geogebra3D.euclidian3D.plots.DynamicMesh;
+import geogebra3D.euclidian3D.plots.curves.CurveTriangleList;
 import geogebra3D.euclidian3D.plots.surfaces.implicit.MarchingCubes;
 
 import java.awt.Color;
@@ -571,11 +572,11 @@ public class PlotterBrush {
 
 	}
 	
-	public void draw(CurveMesh mesh){
+	public void draw(DynamicMesh mesh){
  		FloatBuffer vertexBuffer = mesh.getVertices();
 		FloatBuffer normalBuffer = mesh.getNormals();
-		int visibleSegmentCount = mesh.getVisibleSegmentCount();
-		int verticesPerSegment = CurveMesh.VERTICES_PER_SEGMENT;
+		int visibleSegmentCount = mesh.getVisibleChunkCount();
+		int verticesPerSegment = CurveTriangleList.VERTICES_PER_SEGMENT;
 		
 		manager.texture(0, 0);
 		
