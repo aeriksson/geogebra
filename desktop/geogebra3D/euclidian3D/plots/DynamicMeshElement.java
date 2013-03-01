@@ -59,8 +59,8 @@ public abstract class DynamicMeshElement {
 		this.ignoreFlag = ignoreFlag;
 		this.lastVersion = version;
 		this.mesh = mesh;
-		children = new DynamicMeshElement[mesh.nChildren];
-		parents = new DynamicMeshElement[mesh.nParents];
+		children = new DynamicMeshElement[mesh.childrenPerElement];
+		parents = new DynamicMeshElement[mesh.parentsPerElement];
 	}
 	
 	public abstract void init();
@@ -94,7 +94,7 @@ public abstract class DynamicMeshElement {
 	 * @return the child at index i
 	 */
 	public DynamicMeshElement getChild(int i) {
-		if (i >= mesh.nChildren)
+		if (i >= mesh.childrenPerElement)
 			throw new IndexOutOfBoundsException();
 		if (children[i] == null) {
 			createChild(i);
@@ -228,7 +228,7 @@ public abstract class DynamicMeshElement {
 	 */
 	public boolean childrenSplit() {
 		boolean ret = false;
-		for (int i = 0; i < mesh.nChildren; i++)
+		for (int i = 0; i < mesh.childrenPerElement; i++)
 			ret = ret || (children[i] != null ? children[i].isSplit() : false);
 		return ret;
 	}

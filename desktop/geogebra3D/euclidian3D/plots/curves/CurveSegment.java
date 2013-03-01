@@ -4,7 +4,6 @@ import geogebra.common.kernel.Matrix.Coords;
 import geogebra3D.euclidian3D.plots.DynamicMesh;
 import geogebra3D.euclidian3D.plots.DynamicMeshElement;
 import geogebra3D.euclidian3D.plots.TriangleListElement;
-import geogebra3D.kernel3D.GeoCurveCartesian3D;
 
 /**
  * An element in a CurveMesh.
@@ -273,17 +272,14 @@ class CurveSegment extends DynamicMeshElement {
 	}
 
 	private Coords calcVertex(double u) {
-		final CurveMesh m = (CurveMesh) mesh;
-		final GeoCurveCartesian3D curve = m.getFunction();
-
-		Coords f = curve.evaluateCurve(u);
+		Coords f = mesh.evaluateFunction(u);
 
 		// if infinite, attempt to move in some direction
 		double d = 1e-8;
 		if (!f.isFinite() || !f.isDefined()) {
-			f = curve.evaluateCurve(u + d);
+			f = mesh.evaluateFunction(u + d);
 			if (f.isSingular()) {
-				f = curve.evaluateCurve(u - d);
+				f = mesh.evaluateFunction(u - d);
 			}
 		}
 		return f;
@@ -491,8 +487,8 @@ class CurveSegment extends DynamicMeshElement {
 	@Override
 	protected void createChild(int i) {
 		// generate both children at once
-		children[0] = new CurveSegment((DynamicMesh) mesh, level + 1, (CurveSegment)parents[0], this, lastVersion);
-		children[1] = new CurveSegment((DynamicMesh) mesh, level + 1, this, (CurveSegment)parents[1], lastVersion);
+		children[0] = new CurveSegment(mesh, level + 1, (CurveSegment)parents[0], this, lastVersion);
+		children[1] = new CurveSegment(mesh, level + 1, this, (CurveSegment)parents[1], lastVersion);
 	}
 
 	@Override

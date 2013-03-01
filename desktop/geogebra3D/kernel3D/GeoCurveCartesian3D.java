@@ -9,6 +9,7 @@ import geogebra.common.kernel.arithmetic.Function;
 import geogebra.common.kernel.geos.GeoCurveCartesian3DInterface;
 import geogebra.common.kernel.geos.GeoElement;
 import geogebra.common.kernel.kernelND.GeoCurveCartesianND;
+import geogebra.common.kernel.kernelND.ParametricFunction;
 import geogebra.common.plugin.GeoClass;
 import geogebra3D.euclidian3D.Drawable3D;
 
@@ -19,7 +20,7 @@ import geogebra3D.euclidian3D.Drawable3D;
  * 
  */
 public class GeoCurveCartesian3D extends GeoCurveCartesianND implements
-		GeoCurveCartesian3DInterface, GeoElement3DInterface {
+		GeoCurveCartesian3DInterface, GeoElement3DInterface, ParametricFunction {
 
 	/** link with drawable3D */
 	private Drawable3D drawable3D = null;
@@ -206,6 +207,18 @@ public class GeoCurveCartesian3D extends GeoCurveCartesianND implements
 	@Override
 	public boolean isGeoElement3D() {
 		return true;
+	}
+
+	public Coords sample(double[] parameters) {
+		if (parameters.length != 1) {
+			throw new IllegalArgumentException("Invalid input dimension.");
+		}
+		
+		return evaluateCurve(parameters[0]);
+	}
+
+	public double[] getDomain() {
+		return new double[]{this.getMinParameter(), this.getMaxParameter()};
 	}
 
 }

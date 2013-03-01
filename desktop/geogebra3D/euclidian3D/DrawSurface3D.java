@@ -3,10 +3,12 @@ package geogebra3D.euclidian3D;
 import geogebra.common.kernel.arithmetic.Functional2Var;
 import geogebra.common.kernel.geos.GeoElement;
 import geogebra.common.kernel.geos.GeoFunctionNVar;
-import geogebra.common.kernel.kernelND.SurfaceEvaluable;
+import geogebra.common.kernel.kernelND.ParametricFunction;
 import geogebra3D.euclidian3D.opengl.PlotterSurface;
 import geogebra3D.euclidian3D.opengl.Renderer;
 import geogebra3D.euclidian3D.plots.surfaces.parametric.SurfaceMesh;
+
+import java.util.Arrays;
 
 /**
  * Class for drawing a 2-var function
@@ -20,7 +22,7 @@ public class DrawSurface3D extends Drawable3DSurfaces {
 	private SurfaceMesh mesh;
 
 	/** The function being rendered */
-	SurfaceEvaluable surface;
+	ParametricFunction surface;
 
 	/** if set to true - the domain we're looking at is R^2 */
 	private boolean unboundedDomain;
@@ -44,11 +46,11 @@ public class DrawSurface3D extends Drawable3DSurfaces {
 	 * @param a_view3d
 	 * @param function
 	 */
-	public DrawSurface3D(EuclidianView3D a_view3d, SurfaceEvaluable surface) {
+	public DrawSurface3D(EuclidianView3D a_view3d, ParametricFunction surface) {
 		super(a_view3d, (GeoElement) surface);
 		this.surface = surface;
 		
-		if (Double.isNaN(surface.getMinParameter(0))){
+		if (Double.isNaN(surface.getDomain()[0])){
 			unboundedDomain=true;
 		}else{
 			unboundedDomain=false;
@@ -58,34 +60,19 @@ public class DrawSurface3D extends Drawable3DSurfaces {
 
 		updateCullingBox();
 
-		mesh = new SurfaceMesh(surface, cullingBox, activeDomain);
+		mesh = new SurfaceMesh(surface, activeDomain, cullingBox);
 	}
 
 	private boolean updateDomain(){
-		boolean changed = false;
 		if (!unboundedDomain) {
-			double t = surface.getMinParameter(0);
-			if(t != activeDomain[0]) {
-				changed = true;
-				activeDomain[0] = t;
-			}
-			t = surface.getMaxParameter(0);
-			if(t != activeDomain[1]) {
-				changed = true;
-				activeDomain[1] = t;
-			}
-			t = surface.getMinParameter(1);
-			if(t != activeDomain[2]) {
-				changed = true;
-				activeDomain[2] = t;
-			}
-			t = surface.getMaxParameter(1);
-			if(t != activeDomain[3]) {
-				changed = true;
-				activeDomain[3] = t;
+			double[] domain = surface.getDomain();
+			
+			if (!Arrays.equals(domain, activeDomain)) {
+				activeDomain = domain;
+				return true;
 			}
 		}
-		return changed;
+		return false;
 	}
 
 	private boolean updateCullingBox() {
@@ -147,7 +134,7 @@ public class DrawSurface3D extends Drawable3DSurfaces {
 		if (elementHasChanged) {
 			if (updateDomain()) {
 				// domain has changed - create a new mesh
-				mesh = new SurfaceMesh(surface, cullingBox, activeDomain);
+				mesh = new SurfaceMesh(surface, activeDomain, cullingBox);
 			} else {
 				// otherwise, update the surface
 				elementHasChanged = false;
@@ -199,7 +186,7 @@ public class DrawSurface3D extends Drawable3DSurfaces {
 
 	protected void updateForView() {
 		if(updateCullingBox()){
-			mesh = new SurfaceMesh(surface, cullingBox, activeDomain);
+			mesh = new SurfaceMesh(surface, activeDomain, cullingBox);
 		}
 		if (updateForItSelf()) {
 			//the perspective has changed so the mesh has to be updated

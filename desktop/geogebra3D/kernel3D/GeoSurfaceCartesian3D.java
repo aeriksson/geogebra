@@ -11,6 +11,7 @@ import geogebra.common.kernel.geos.GeoElement;
 import geogebra.common.kernel.kernelND.GeoLevelOfDetail;
 import geogebra.common.kernel.kernelND.GeoSurfaceCartesianND;
 import geogebra.common.kernel.kernelND.LevelOfDetail;
+import geogebra.common.kernel.kernelND.ParametricFunction;
 import geogebra.common.kernel.kernelND.SurfaceEvaluable;
 import geogebra.common.plugin.GeoClass;
 import geogebra3D.euclidian3D.Drawable3D;
@@ -22,7 +23,8 @@ import geogebra3D.euclidian3D.Drawable3D;
  * 
  */
 public class GeoSurfaceCartesian3D extends GeoSurfaceCartesianND implements
-		GeoElement3DInterface, Functional2Var, SurfaceEvaluable, GeoLevelOfDetail {
+		GeoElement3DInterface, Functional2Var, SurfaceEvaluable, GeoLevelOfDetail,
+		ParametricFunction {
 
 	/** link with drawable3D */
 	private Drawable3D drawable3D = null;
@@ -228,4 +230,14 @@ public class GeoSurfaceCartesian3D extends GeoSurfaceCartesianND implements
 		return true;
 	}
 
+	public Coords sample(double[] parameters) {
+		if (parameters.length != 2) {
+			throw new IllegalArgumentException("Invalid input length");
+		}
+		return evaluateSurface(parameters);
+	}
+
+	public double[] getDomain() {
+		return new double[]{getMinParameter(0), getMaxParameter(0), getMinParameter(0), getMaxParameter(1)};
+	}
 }

@@ -34,6 +34,7 @@ import geogebra.common.kernel.arithmetic.NumberValue;
 import geogebra.common.kernel.kernelND.GeoLevelOfDetail;
 import geogebra.common.kernel.kernelND.GeoPointND;
 import geogebra.common.kernel.kernelND.LevelOfDetail;
+import geogebra.common.kernel.kernelND.ParametricFunction;
 import geogebra.common.kernel.kernelND.SurfaceEvaluable;
 import geogebra.common.plugin.GeoClass;
 import geogebra.common.util.StringUtil;
@@ -48,7 +49,7 @@ import geogebra.common.util.StringUtil;
  */
 public class GeoFunctionNVar extends GeoElement
 implements FunctionalNVar, CasEvaluableFunction, Region, Transformable, Translateable, MatrixTransformable,
- Dilateable, PointRotateable, Mirrorable, SurfaceEvaluable, GeoLevelOfDetail {
+ Dilateable, PointRotateable, Mirrorable, SurfaceEvaluable, GeoLevelOfDetail, ParametricFunction {
 
 	private static final double STRICT_INEQ_OFFSET = 4*Kernel.MIN_PRECISION;
 	private static final int SEARCH_SAMPLES = 70;
@@ -888,6 +889,20 @@ implements FunctionalNVar, CasEvaluableFunction, Region, Transformable, Translat
 
 			return ret;
 
+		}
+
+		public Coords sample(double[] parameters) {
+			return evaluatePoint(parameters);
+		}
+
+		public double[] getDomain() {
+			int nVars = getVarNumber();
+			double[] domain = new double[2 * nVars];
+			for (int i = 0; i < nVars; i++) {
+				domain[2 * i] = getMinParameter(i);
+				domain[2 * i + 1] = getMaxParameter(i);
+			}
+			return domain;
 		}
 
 }

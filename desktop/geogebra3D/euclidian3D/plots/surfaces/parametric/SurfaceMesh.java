@@ -1,6 +1,6 @@
 package geogebra3D.euclidian3D.plots.surfaces.parametric;
 
-import geogebra.common.kernel.kernelND.SurfaceEvaluable;
+import geogebra.common.kernel.kernelND.ParametricFunction;
 import geogebra3D.euclidian3D.plots.DynamicMesh;
 import geogebra3D.euclidian3D.plots.FastBucketPriorityQueue;
 
@@ -13,64 +13,61 @@ import java.util.Map;
  */
 public class SurfaceMesh extends DynamicMesh {
 
-	/**
-	 * scaling constant used for setting the error of diamonds where one or more
-	 * vertices are undefined
-	 */
-	public static final double UNDEFINED_ELEMENT_ERROR_DENSITY = 100;
-
-	/** x/y difference used when estimating normals */
-	public static final double NORMAL_APPROXIMATION_DELTA = 1e-6;
-
-	/** a reference to the function being drawn */
-	private SurfaceEvaluable function;
-	
+	private static final int INITIAL_SPLIT_COUNT = 100;
 	private static final Map<String, Object> DYNAMIC_MESH_CONFIG;
 	static {
         Map<String, Object> config = new HashMap<String, Object>();
         config.put("maximum refinement depth", 20);
-        config.put("initial splits", 100);
         config.put("parents per element", 2);
         config.put("children per element", 4);
         
         DYNAMIC_MESH_CONFIG = Collections.unmodifiableMap(config);
 	}
 
+	/** The domain being drawn. This is needed since the function domain might be unbounded. */
+	double[] domain;
+	
 	/**
 	 * Creates a mesh for some function.
 	 * 
 	 * @param function
 	 *            The function to be rendered
+	 * @param domain
+	 *  		  The domain the function should be evaluated on as [uMin, uMax, vMin, vMax].
 	 * @param cullingBox
 	 *            Box to cull triangles against
-	 * @param domain
-	 *            Function domain as {x_min, x_max, y_min, y_max}
 	 */
-	public SurfaceMesh(SurfaceEvaluable function, double[] cullingBox,
-			double[] domain) {
-		super(new FastBucketPriorityQueue(new SurfaceSplitBucketAssigner(), true),
+	public SurfaceMesh(ParametricFunction function, double[] domain, double[] cullingBox) {
+		super(function, new FastBucketPriorityQueue(new SurfaceSplitBucketAssigner(), true),
 				new FastBucketPriorityQueue(new SurfaceSplitBucketAssigner(), false),
-				new SurfaceTriangleList(100, 0), domain, cullingBox, DYNAMIC_MESH_CONFIG);
-		this.function = function;
-	}
-	
-	/**
-	 * @return the function being rendered
-	 * */
-	@Override
-	public SurfaceEvaluable getFunction() {
-		return function;
+				new SurfaceTriangleList(100, 0), cullingBox, DYNAMIC_MESH_CONFIG);
+		
+		this.domain = domain;
+		
+		init();
 	}
 
 	/**
-	 * Bootstraps a base mesh.
-	 * The code is rather complex and impenetrable,
-	 * as a consequence of the diamond structure. 
-	 * 
-	 * @param domain The function domain on the format [uMin, uMax, vMin, vMax]
+	 * Bootstraps the base of the mesh.
 	 */
-	@Override
-	protected void initRoot(double[] domain) {
+	protected void init() {
+		initRoot();
+	
+		updateCullingInfo();
+	
+		splitQueue.add(root);
+		triangleList.add(root);
+	
+		performSplits(INITIAL_SPLIT_COUNT);
+	}
+	
+	/**
+	 * Bootstraps a base mesh.
+		config.put("initial splits", 2);
+	 * The code is rather complex and impenetrable,
+	 * as a consequence of the diamond structure.
+	 */
+	protected void initRoot() {
 		double uMin = domain[0];
 		double uMax = domain[1];
 		double vMin = domain[2];
@@ -141,7 +138,7 @@ public class SurfaceMesh extends DynamicMesh {
 	
 	@Override
 	protected double getMaximumAllowedError(double scaleFactor) {
-		double levelOfDetailCoefficient = Math.pow(-10, 1.7 + levelOfDetail * 0.4);
+		double levelOfDetailCoefficient = Math.pow(10, -(1.7 + levelOfDetail * 0.4));
 		double scaleCoefficient = scaleFactor;
 		return levelOfDetailCoefficient * scaleCoefficient;
 	}

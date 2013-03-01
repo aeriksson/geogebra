@@ -1,5 +1,6 @@
 package geogebra3D.euclidian3D;
 
+import geogebra.common.kernel.kernelND.ParametricFunction;
 import geogebra3D.euclidian3D.opengl.PlotterBrush;
 import geogebra3D.euclidian3D.opengl.Renderer;
 import geogebra3D.euclidian3D.plots.curves.CurveMesh;
@@ -14,7 +15,7 @@ import geogebra3D.kernel3D.GeoCurveCartesian3D;
 public class DrawCurve3D extends Drawable3DCurves {
 
 	/** handle to the curve function */
-	private GeoCurveCartesian3D curve;
+	private ParametricFunction curve;
 
 	/** the mesh representation of the curve */
 	private CurveMesh mesh;
@@ -35,7 +36,7 @@ public class DrawCurve3D extends Drawable3DCurves {
 		super(a_view3d, curve);
 		this.curve = curve;
 		updateDomain();
-		mesh = new CurveMesh(curve, cullingBox, domain, (float) a_view3d.getScale());
+		mesh = new CurveMesh(curve, cullingBox, (float) a_view3d.getScale());
 		updateCullingBox();
 	}
 
@@ -45,21 +46,13 @@ public class DrawCurve3D extends Drawable3DCurves {
 	}
 
 	private boolean updateDomain() {
-		boolean domainChanged = false;
-
-		double min = curve.getMinParameter();
-		double max = curve.getMaxParameter();
+		double[] newDomain = curve.getDomain();
 		
-		if (min != domain[0]) {
-			domainChanged = true;
-			domain[0] = min;
+		if (newDomain[0] != domain[0] || newDomain[1] != domain[1]) {
+			domain = newDomain;
+			return true;
 		}
-		if (max != domain[1]) {
-			domainChanged = true;
-			domain[1] = max;
-		}
-
-		return domainChanged;
+		return false;
 	}
 
 	private void updateCullingBox() {
@@ -86,7 +79,7 @@ public class DrawCurve3D extends Drawable3DCurves {
 		if (elementHasChanged) {
 			if (updateDomain()) {
 				//domain has changed - create a new mesh
-				mesh = new CurveMesh(curve, cullingBox, domain, (float) getView3D().getScale());
+				mesh = new CurveMesh(curve, cullingBox, (float) getView3D().getScale());
 			} else {
 				//otherwise, update the old mesh
 				elementHasChanged = false;
