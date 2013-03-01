@@ -1,11 +1,9 @@
-package geogebra3D.euclidian3D;
+package geogebra3D.euclidian3D.intersections;
 
 import java.util.LinkedList;
 
 /**
  * An octree that is optimized to only contain triangles
- * 
- * @author André Eriksson
  */
 public class TriangleOctree extends Octree {
 
@@ -35,7 +33,7 @@ public class TriangleOctree extends Octree {
 	 *            the triangle as a set of nine floats
 	 */
 	@Override
-	public void insertTriangle(float[] tri) throws Exception {
+	public void insertTriangle(float[] tri) {
 		float[] bb = Collision.triangleBoundingBox(tri);
 
 		root.insert(bb, tri, 1);
@@ -72,9 +70,6 @@ public class TriangleOctree extends Octree {
 /**
  * A node in a triangle octree - contains a set of triangles and methods for
  * computing triangle intersections
- * 
- * @author André Eriksson
- * 
  */
 class TriangleOctreeNode extends OctreeNode {
 

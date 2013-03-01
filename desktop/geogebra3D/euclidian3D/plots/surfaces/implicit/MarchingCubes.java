@@ -1,10 +1,12 @@
-package geogebra3D.euclidian3D.plots;
+package geogebra3D.euclidian3D.plots.surfaces.implicit;
 
 import geogebra.common.kernel.Matrix.Coords;
 import geogebra.common.kernel.geos.GeoFunctionNVar;
-import geogebra3D.euclidian3D.BucketAssigner;
-import geogebra3D.euclidian3D.TriList;
-import geogebra3D.euclidian3D.TriListElem;
+import geogebra3D.euclidian3D.plots.BucketAssigner;
+import geogebra3D.euclidian3D.plots.DynamicMeshElement;
+import geogebra3D.euclidian3D.plots.FastBucketPriorityQueue;
+import geogebra3D.euclidian3D.plots.TriangleList;
+import geogebra3D.euclidian3D.plots.TriangleListElement;
 
 import java.nio.FloatBuffer;
 import java.util.Iterator;
@@ -14,8 +16,6 @@ import java.util.ListIterator;
 
 /**
  * An element in MarchingCubes.
- * 
- * @author André Eriksson
  */
 class MCElement {
 
@@ -128,9 +128,8 @@ class MCElement {
 
 /**
  * A triangle in the marching cubes implementation
- * @author André Eriksson
  */
-class MCTriangle extends DynamicMeshElement2 {
+class MCTriangle extends DynamicMeshElement {
 	
 	/** The three adjacent triangles in the mesh */
 	MCTriangle[] neighbors = new MCTriangle[3];
@@ -147,7 +146,7 @@ class MCTriangle extends DynamicMeshElement2 {
 	/** The error associated with the element */
 	double error;
 	/** The associated triangle list element */
-	public TriListElem triListElem;
+	public TriangleListElement triListElem;
 
 	/**
 	 * Standard constructor
@@ -314,7 +313,7 @@ class MCTriangle extends DynamicMeshElement2 {
 	}
 
 	@Override
-	protected double getError() {
+	public double getError() {
 		return error;
 	}
 
@@ -358,14 +357,17 @@ class MCTriangle extends DynamicMeshElement2 {
 				return true;
 		return false;
 	}
+
+	@Override
+	public void init() {
+		// TODO Auto-generated method stub
+	}
 }
 
 /**
  * Triangle list used for MC
- * 
- * @author André Eriksson
  */
-class MCTriList extends TriList {
+class MCTriList extends TriangleList {
 
 	GeoFunctionNVar f;
 	private final double delta = 1e-4;
@@ -383,7 +385,7 @@ class MCTriList extends TriList {
 
 	double errorSum() {
 		double sum = 0;
-		for (TriListElem elem : this)
+		for (TriangleListElement elem : this)
 			sum += ((MCTriangle) elem.getOwner()).getError();
 		return sum;
 	}
@@ -440,7 +442,7 @@ class MCTriList extends TriList {
 						{ v[6], v[7], v[8] } }, f);
 				tris.add(tri);
 
-				TriListElem el = add(v, n);
+				TriangleListElement el = add(v, n);
 				el.setOwner(tri);
 				tri.triListElem = el;
 			}
@@ -3250,19 +3252,19 @@ class MCTriList extends TriList {
 
 		calcNormals(v, n);
 
-		TriListElem el = add(v, n);
+		TriangleListElement el = add(v, n);
 		el.setOwner(c);
 		c.triListElem = el;
 	}
 
 	public void remove(MCTriangle t) {
-		if (!remove(t.triListElem))
+		if (!removeTriangle(t.triListElem))
 			System.out.print("");
 	}
 
 }
 
-class MCAssigner implements BucketAssigner<DynamicMeshElement2> {
+class MCAssigner implements BucketAssigner<DynamicMeshElement> {
 
 	public int getBucketIndex(Object o, int bucketAmt) {
 		MCTriangle d = (MCTriangle) o;
@@ -3276,17 +3278,13 @@ class MCAssigner implements BucketAssigner<DynamicMeshElement2> {
 	}
 }
 
-/**
- * 
- * @author André Eriksson
- */
 class MCROAM {
 	private MCTriList triList;
-	private FastBucketPQ pSplit = new FastBucketPQ(new MCAssigner(), false);
+	private FastBucketPriorityQueue pSplit = new FastBucketPriorityQueue(new MCAssigner(), false);
 
 	MCROAM(MCTriList triList) {
 		this.triList = triList;
-		for (TriListElem t : triList) {
+		for (TriangleListElement t : triList) {
 			MCTriangle tri = (MCTriangle) t.getOwner();
 			pSplit.add(tri);
 		}
@@ -3419,24 +3417,6 @@ class MCROAM {
 			link(d0, d1);
 		}
 
-		// assert
-		/*
-		 * if(b==a.neighbors[0]){ verifyNeighbors(d0,a.neighbors[2]);
-		 * verifyNeighbors(d1,a.neighbors[1]); verifyNeighbors(d1,c0);
-		 * verifyNeighbors(c1,d0); verifyNeighbors(d1,d0);
-		 * if(a.neighbors[1].hasNeighbor(a)) System.out.println("error");
-		 * if(a.neighbors[2].hasNeighbor(a)) System.out.println("error"); } else
-		 * if(b==a.neighbors[1]){ verifyNeighbors(d,d1); verifyNeighbors(d1,d0);
-		 * verifyNeighbors(d0,c1); verifyNeighbors(d1,c0);
-		 * if(!d0.hasNeighbor(c1)); if(a.neighbors[2]!=null){
-		 * verifyNeighbors(d,a.neighbors[2]); if(a.neighbors[2].hasNeighbor(a))
-		 * System.out.println("error"); } } else if(b==a.neighbors[2]){
-		 * verifyNeighbors(d,d0); verifyNeighbors(d1,d0);
-		 * verifyNeighbors(d0,c1); verifyNeighbors(d1,c0);
-		 * if(a.neighbors[1]!=null){ verifyNeighbors(d,a.neighbors[1]);
-		 * if(a.neighbors[1].hasNeighbor(a)) System.out.println("error"); } }
-		 */
-
 		// recurse
 		if (b != a.neighbors[0]) {
 			if (b == a.neighbors[1])
@@ -3449,12 +3429,6 @@ class MCROAM {
 
 		// remove from drawing list
 		triList.remove(a);
-	}
-
-	@SuppressWarnings("unused")
-	private void verifyNeighbors(MCTriangle t1, MCTriangle t2) {
-		if (!t1.hasNeighbor(t2) || !t2.hasNeighbor(t1))
-			System.out.println("error");
 	}
 
 	/**
@@ -3474,13 +3448,12 @@ class MCROAM {
 	 * @return
 	 */
 	private boolean tooCoarse() {
-		return (triList.getTriAmt() < 3000);
+		return (triList.getTriangleCount() < 3000);
 	}
 }
 
 /**
  * A variant of the Marching Cubes algorithm
- * @author André Eriksson 
  */
 public class MarchingCubes {
 	private int INITIAL_ELEMENTS = 2;
@@ -4059,7 +4032,7 @@ public class MarchingCubes {
 	 * @return the amount of visible segments
 	 */
 	public int getVisibleChunks() {
-		return drawList.getChunkAmt();
+		return drawList.getChunkCount();
 	}
 
 	/**

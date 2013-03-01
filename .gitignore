@@ -12,6 +12,7 @@
 common/test-classes
 common/bin
 common/build
+common/src/geogebra/common/kernel/parser/*.java
 common/war/WEB-INF/classes
 common/*.ggb
 common/*.ggt
@@ -43,3 +44,4 @@ web/war/WEB-INF/classes
 
 # misc
 *.img
+*.mf

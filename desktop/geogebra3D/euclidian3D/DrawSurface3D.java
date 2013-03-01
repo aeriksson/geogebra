@@ -6,7 +6,7 @@ import geogebra.common.kernel.geos.GeoFunctionNVar;
 import geogebra.common.kernel.kernelND.SurfaceEvaluable;
 import geogebra3D.euclidian3D.opengl.PlotterSurface;
 import geogebra3D.euclidian3D.opengl.Renderer;
-import geogebra3D.euclidian3D.plots.SurfaceMesh2;
+import geogebra3D.euclidian3D.plots.surfaces.parametric.SurfaceMesh;
 
 /**
  * Class for drawing a 2-var function
@@ -17,7 +17,7 @@ import geogebra3D.euclidian3D.plots.SurfaceMesh2;
 public class DrawSurface3D extends Drawable3DSurfaces {
 
 	/** The mesh currently being rendered - is occasionally reset */
-	private SurfaceMesh2 mesh;
+	private SurfaceMesh mesh;
 
 	/** The function being rendered */
 	SurfaceEvaluable surface;
@@ -58,7 +58,7 @@ public class DrawSurface3D extends Drawable3DSurfaces {
 
 		updateCullingBox();
 
-		mesh = new SurfaceMesh2(surface, cullingBox, activeDomain);
+		mesh = new SurfaceMesh(surface, cullingBox, activeDomain);
 	}
 
 	private boolean updateDomain(){
@@ -147,7 +147,7 @@ public class DrawSurface3D extends Drawable3DSurfaces {
 		if (elementHasChanged) {
 			if (updateDomain()) {
 				// domain has changed - create a new mesh
-				mesh = new SurfaceMesh2(surface, cullingBox, activeDomain);
+				mesh = new SurfaceMesh(surface, cullingBox, activeDomain);
 			} else {
 				// otherwise, update the surface
 				elementHasChanged = false;
@@ -199,7 +199,7 @@ public class DrawSurface3D extends Drawable3DSurfaces {
 
 	protected void updateForView() {
 		if(updateCullingBox()){
-			mesh = new SurfaceMesh2(surface, cullingBox, activeDomain);
+			mesh = new SurfaceMesh(surface, cullingBox, activeDomain);
 		}
 		if (updateForItSelf()) {
 			//the perspective has changed so the mesh has to be updated

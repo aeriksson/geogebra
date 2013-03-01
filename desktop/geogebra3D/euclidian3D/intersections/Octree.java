@@ -1,10 +1,9 @@
-package geogebra3D.euclidian3D;
+package geogebra3D.euclidian3D.intersections;
 
 import java.util.LinkedList;
 
 /**
  * A 3D octree for collision, picking etc. 
- * @author André Eriksson
  */
 public abstract class Octree {
 	/** The maximum level in the octree */
@@ -32,7 +31,7 @@ public abstract class Octree {
 	 *            the triangle to insert
 	 * @throws Exception
 	 */
-	public abstract void insertTriangle(float[] tri) throws Exception;
+	public abstract void insertTriangle(float[] tri);
 
 	/**
 	 * Attempt to insert a segment into the octree
@@ -91,8 +90,6 @@ public abstract class Octree {
 
 /**
  * A class representing 
- * @author andre
- *
  */
 abstract class OctreeNode {
 

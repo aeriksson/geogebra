@@ -2,7 +2,7 @@ package geogebra3D.euclidian3D;
 
 import geogebra3D.euclidian3D.opengl.PlotterBrush;
 import geogebra3D.euclidian3D.opengl.Renderer;
-import geogebra3D.euclidian3D.plots.CurveMesh;
+import geogebra3D.euclidian3D.plots.curves.CurveMesh;
 import geogebra3D.kernel3D.GeoCurveCartesian3D;
 
 /**
@@ -35,8 +35,8 @@ public class DrawCurve3D extends Drawable3DCurves {
 		super(a_view3d, curve);
 		this.curve = curve;
 		updateDomain();
+		mesh = new CurveMesh(curve, cullingBox, domain, (float) a_view3d.getScale());
 		updateCullingBox();
-		mesh = new CurveMesh(curve, cullingBox, (float) a_view3d.getScale());
 	}
 
 	@Override
@@ -86,7 +86,7 @@ public class DrawCurve3D extends Drawable3DCurves {
 		if (elementHasChanged) {
 			if (updateDomain()) {
 				//domain has changed - create a new mesh
-				mesh = new CurveMesh(curve, cullingBox, (float) getView3D().getScale());
+				mesh = new CurveMesh(curve, cullingBox, domain, (float) getView3D().getScale());
 			} else {
 				//otherwise, update the old mesh
 				elementHasChanged = false;
@@ -113,7 +113,16 @@ public class DrawCurve3D extends Drawable3DCurves {
 	protected void updateForView() {
 		updateCullingBox();
 		EuclidianView3D view = getView3D();
-		mesh.updateScale((float) view.getScale());
+		mesh.setScale((float) view.getScale());
+	}
+	
+	/**
+	 * Set the curve width factor, i.e. a constant proportional to the
+	 * curve thickness.
+	 * @param value The desired curve width factor value for the mesh.
+	 */
+	public void setScaleFactor(float value) {
+		mesh.setScaleFactor(value);
 	}
 
 	@Override

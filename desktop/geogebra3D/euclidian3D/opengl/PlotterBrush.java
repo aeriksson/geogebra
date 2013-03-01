@@ -2,12 +2,11 @@ package geogebra3D.euclidian3D.opengl;
 
 import geogebra.common.kernel.Kernel;
 import geogebra.common.kernel.Matrix.Coords;
-import geogebra.common.kernel.Matrix.Coords3D;
 import geogebra.common.kernel.geos.GeoCurveCartesian3DInterface;
 import geogebra.common.kernel.geos.GeoElement;
-import geogebra3D.euclidian3D.plots.CurveMesh;
-import geogebra3D.euclidian3D.plots.CurveTree;
-import geogebra3D.euclidian3D.plots.MarchingCubes;
+import geogebra3D.euclidian3D.plots.DynamicMesh;
+import geogebra3D.euclidian3D.plots.curves.CurveTriangleList;
+import geogebra3D.euclidian3D.plots.surfaces.implicit.MarchingCubes;
 
 import java.awt.Color;
 import java.nio.FloatBuffer;
@@ -572,128 +571,22 @@ public class PlotterBrush {
 		} 
 
 	}
-
-	////////////////////////////////////
-	// 3D CURVE DRAWING METHODS
-	////////////////////////////////////
 	
-	private boolean firstCurvePoint = false;
-	private Coords previousPosition;
-	private Coords previousTangent;
-	
-	/**
-	 * Starts drawing a curve
-	 */
-	private void startDrawingCurve(){
-		firstCurvePoint = true;
-	}
-	
-	/** adds the point with the specified position and tangent to the curve currently being drawn.
-	 * @param position
-	 * @param tangent
-	 */
-	public void addPointToCurve(Coords position, Coords tangent){
-		if(firstCurvePoint){
-			end = new PlotterBrushSection(position, tangent, thickness);
-			firstCurvePoint=false;
-		}
-		else {
-			if(discontinuityPassed(position)) {
-				startDrawingCurve();				//start drawing a new segment
-				addPointToCurve(position,tangent);
-				return;
-			} else {
-				start = end;
-				end = new PlotterBrushSection(start,position,tangent,thickness);
-	
-				addCurvePos(0);
-				join();
-			}
-		}
-		previousPosition = position;
-		previousTangent  = tangent;
-	}
-	
-	/** adds the point with the specified position and tangent to the curve currently being drawn.
-	 * @param p the point's position vector
-	 * @param t the tangent at the point
-	 */
-	public void addPointToCurve3D(Coords3D p, Coords3D t){
-		Coords position = new Coords(p.getX(),p.getY(),p.getZ(),0);
-		Coords tangent = new Coords(t.getX(),t.getY(),t.getZ(),0);
-		if(firstCurvePoint){
-			end = new PlotterBrushSection(position, tangent, thickness);
-			firstCurvePoint=false;
-		}
-		else {
-			if(discontinuityPassed(position)) {
-				startDrawingCurve();				//start drawing a new segment
-				addPointToCurve(position,tangent);
-				return;
-			} else {
-				start = end;
-				end = new PlotterBrushSection(start,position,tangent,thickness);
-	
-				addCurvePos((float) position.sub(start.getCenter()).norm());
-				join();
-			}
-		}
-		previousPosition = position;
-		previousTangent  = tangent;
-	}
-	
-	/** A test used to judge if the curve has passed over a discontinuity since
-	 *  the last point was added.
-	 * @param position the position of the new point (pos2)
-	 * @return true iff (pos2-pos1)/||pos2-pos1|| . tangent1 < CurveTree.discontinuityThreshold
-	 */
-	private boolean discontinuityPassed(Coords position) {
-		Coords dir = position.sub(previousPosition).normalized();
-		
-		if(dir.dotproduct(previousTangent)<CurveTree.discontinuityThreshold)
-			return true;
-		return false;
-	}
-	
-	/** draws the curve defined by tree, in the viewing volume of a sphere
-	 *  with radius r centered at the origin
-	 * @param tree
-	 * @param radius the radius of a sphere bounding the viewing volume
-	 */
-	public void draw(CurveTree tree, double radius){
-		
-		
-
-		setTextureType(PlotterBrush.TEXTURE_LINEAR);
-		
-		tree.setRadius(radius);
-		
-		startDrawingCurve();
-		
-		//draw the start point if visible and defined
-		tree.drawStartPointIfVisible(this);
-		
-		tree.beginRefinement(this);
-		
-		//draw the end point if visible and defined
-		tree.drawEndPointIfVisible(this);
-	}
-	
-	public void draw(CurveMesh mesh){
- 		FloatBuffer b1 = mesh.getVertices();
-		FloatBuffer b2 = mesh.getNormals();
-		int cnt = mesh.getVisibleChunks();
-		int vps = mesh.getVerticesPerChunk();
+	public void draw(DynamicMesh mesh){
+ 		FloatBuffer vertexBuffer = mesh.getVertices();
+		FloatBuffer normalBuffer = mesh.getNormals();
+		int visibleSegmentCount = mesh.getVisibleChunkCount();
+		int verticesPerSegment = CurveTriangleList.VERTICES_PER_SEGMENT;
 		
 		manager.texture(0, 0);
 		
 		float[] f = new float[3]; float[] n = new float[3];
-		b1.rewind(); b2.rewind();
-		for(int i = 0; i < cnt; i++) {
+		vertexBuffer.rewind(); normalBuffer.rewind();
+		for(int i = 0; i < visibleSegmentCount; i++) {
 			manager.startGeometry(Manager.TRIANGLE_STRIP);
 			
-			for(int j = 0; j < vps; j++){
-				b1.get(f);b2.get(n);
+			for(int j = 0; j < verticesPerSegment; j++){
+				vertexBuffer.get(f);normalBuffer.get(n);
 				manager.normal(n[0],n[1],n[2]);
 				manager.vertex(f[0],f[1],f[2]);
 			}
@@ -702,21 +595,21 @@ public class PlotterBrush {
 	}
 	
 	public void draw(MarchingCubes mc) {
- 		FloatBuffer b1 = mc.getVertices();
-		int cnt = mc.getVisibleChunks();
-		int vps = mc.getVerticesPerChunk();
+ 		FloatBuffer vertexBuffer = mc.getVertices();
+		int visibleChunkCount = mc.getVisibleChunks();
+		int verticesPerChunk = mc.getVerticesPerChunk();
 		
 		manager.texture(0, 0);
 		
-		float[] f = new float[3];
-		b1.rewind();
-		for(int i = 0; i < cnt; i++) {
+		float[] tempVertex = new float[3];
+		vertexBuffer.rewind();
+		for(int i = 0; i < visibleChunkCount; i++) {
 			manager.startGeometry(Manager.TRIANGLE_STRIP);
 			
-			for(int j = 0; j < vps; j++){
-				b1.get(f);
+			for(int j = 0; j < verticesPerChunk; j++){
+				vertexBuffer.get(tempVertex);
 				manager.normal(1,0,0);
-				manager.vertex(f[0],f[1],f[2]);
+				manager.vertex(tempVertex[0],tempVertex[1],tempVertex[2]);
 			}
 			manager.endGeometry();
 		}

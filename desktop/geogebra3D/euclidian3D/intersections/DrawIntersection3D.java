@@ -1,13 +1,17 @@
-package geogebra3D.euclidian3D;
+package geogebra3D.euclidian3D.intersections;
 
+import geogebra3D.euclidian3D.Drawable3DCurves;
+import geogebra3D.euclidian3D.EuclidianView3D;
 import geogebra3D.euclidian3D.opengl.Renderer;
+import geogebra3D.euclidian3D.plots.curves.CurveTriangleList;
+import geogebra3D.euclidian3D.plots.surfaces.parametric.SurfaceTriangleList;
 
 import java.nio.FloatBuffer;
 
 public class DrawIntersection3D extends Drawable3DCurves{
 	
 	/** A triangle list for the intersection */
-	CurveTriList tris;
+	CurveTriangleList tris;
 	
 	/**
 	 * @param a_view3d
@@ -15,7 +19,7 @@ public class DrawIntersection3D extends Drawable3DCurves{
 	 * @param object2 the second object to intersect
 	 * @throws Exception if there's an error when computing the intersection
 	 */
-	public DrawIntersection3D(EuclidianView3D a_view3d, SurfaceTriList object1, SurfaceTriList object2) throws Exception {
+	public DrawIntersection3D(EuclidianView3D a_view3d, SurfaceTriangleList object1, SurfaceTriangleList object2) throws Exception {
 		super(a_view3d);
 		
 		init(object1, object2);
@@ -27,14 +31,14 @@ public class DrawIntersection3D extends Drawable3DCurves{
 	 * @param object2
 	 * @throws Exception
 	 */
-	private void init(SurfaceTriList object1, SurfaceTriList object2) throws Exception{
+	private void init(SurfaceTriangleList object1, SurfaceTriangleList object2) throws Exception{
 		
 		//bruteforce for now
 		FloatBuffer ver1 = object1.getTriangleBuffer();
 		FloatBuffer ver2 = object2.getTriangleBuffer();
 		
-		int cnt1 = object1.getChunkAmt();
-		int cnt2 = object2.getChunkAmt();
+		int cnt1 = object1.getChunkCount();
+		int cnt2 = object2.getChunkCount();
 		
 		float[] t1 = new float[9]; float[] t2 = new float[9];
 		ver1.rewind(); ver2.rewind();

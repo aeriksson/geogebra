@@ -4,7 +4,7 @@ import geogebra.common.kernel.Matrix.Coords;
 import geogebra.common.kernel.geos.GeoFunctionNVar;
 import geogebra3D.euclidian3D.opengl.PlotterSurface;
 import geogebra3D.euclidian3D.opengl.Renderer;
-import geogebra3D.euclidian3D.plots.MarchingCubes;
+import geogebra3D.euclidian3D.plots.surfaces.implicit.MarchingCubes;
 
 /**
  * Class for drawing an implicit 3-var function

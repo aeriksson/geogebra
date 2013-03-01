@@ -1,11 +1,9 @@
-package geogebra3D.euclidian3D;
+package geogebra3D.euclidian3D.intersections;
 
 import geogebra.common.kernel.Matrix.Coords;
 
 /**
  * A set of collision routines
- * 
- * @author André Eriksson
  */
 public class Collision {
 

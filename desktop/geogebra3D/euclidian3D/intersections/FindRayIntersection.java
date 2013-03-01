@@ -1,12 +1,10 @@
-package geogebra3D.euclidian3D;
+package geogebra3D.euclidian3D.intersections;
 
 import geogebra.common.kernel.arithmetic.FunctionalNVar;
 
 /**
  * Detects the intersection of objects with rays - used for picking points on
  * objects.
- * 
- * @author André Eriksson
  */
 public class FindRayIntersection {
 
